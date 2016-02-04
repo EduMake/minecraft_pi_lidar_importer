@@ -42,12 +42,12 @@ function processFile(inputFile, outFile) {
     });
 }
 
-var sSurfaceFilename = "./dsm/LIDAR-DSM-1M-SK38/sk3782_DSM_1m.asc";
+var sSurfaceFilename = "data/sk3586_DSM_1m.asc";
 var sSurfaceOut = "DSMtest.json";
 processFile(sSurfaceFilename, sSurfaceOut);
 
 
-var sTerrainFilename = "./dsm/LIDAR-DTM-1M-SK38/sk3782_DTM_1m.asc"
+var sTerrainFilename = "data/sk3586_DTM_1m.asc"
 var sTerrainOut = "DTMtest.json";
 processFile(sTerrainFilename, sTerrainOut);
 

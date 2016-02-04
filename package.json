@@ -1,0 +1,24 @@
+{
+  "name": "minecraft_pi_lidar_importer",
+  "version": "0.0.1",
+  "description": "Imports LIDAR data into Minecraft Pi Edition",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://gitlab.utcsheffield.org.uk/tech-group/minecraft_pi_lidar_importer.git"
+  },
+  "keywords": [
+    "Minecraft",
+    "LIDAR",
+    "Raspberry",
+    "Pi"
+  ],
+  "author": "Jonathan-Andrew James",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "minecraft-pi": "^0.2.1"
+  }
+}

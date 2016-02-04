@@ -38,17 +38,17 @@ console.log("iMinHeight =", iMinHeight);
 var Minecraft = require('minecraft-pi');
 var client = new Minecraft('localhost', 4711, function() {
 	// Use the client variable to play with the server! 
-	client.chat('Yo dawg, I heard you like Node.js, so I put some Node.js in your Pi so you can Node.js while you Pi.');
+	client.chat('HELLO! WELCOME TO THE PROGRAM WHICH IMPORTS LIDAR DATA INTO MINECRAFT PI EDITION PLEASE ENJOY!.');
     
   for(var y = 0 ; y < iSize; y++){
     for(var x = 0 ; x < iSize; x++){
   
       var yMC = y;
       var xMC = x;    
-      var TerrainMCHeight = DTM.LIDAR[y][x];
-      var SurfaceMCHeight = DSM.LIDAR[y][x];
+      var TerrainMCHeight = DTM.LIDAR[y][x]-50;
+      var SurfaceMCHeight = DSM.LIDAR[y][x]-50;
       
-      client.setBlock(xMC, yMC, TerrainMCHeight , client.blocks['GRASS_BLOCK']);
+      client.setBlock(xMC, TerrainMCHeight ,yMC, client.blocks['GRASS_BLOCK']);
       /*if(SurfaceMCHeight > TerrainMCHeight){
         client.setBlocks(xMC, yMC, TerrainMCHeight+1, xMC, yMC, SurfaceMCHeight, client.blocks['DIAMOND_BLOCK']);
       }*/
