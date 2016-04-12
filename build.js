@@ -9,11 +9,7 @@ var DTM = JSON.parse(fs.readFileSync(sTerrainOut).toString());
 
 var iSize = 10;
 
-/*var aCombined = DSM.LIDAR.map(function(aRow, y){    
-   return  aRow.map(function(iHeight, x){
-       return {surface:iHeight, terrain:DTM.LIDAR[y][x]};
-   });   
-});*/
+
 
 var aRowMaxes = DSM.LIDAR.map(function(aRow, y){    
     aRow.sort();
@@ -40,18 +36,20 @@ var client = new Minecraft('localhost', 4711, function() {
 	// Use the client variable to play with the server! 
 	client.chat('HELLO! WELCOME TO THE PROGRAM WHICH IMPORTS LIDAR DATA INTO MINECRAFT PI EDITION PLEASE ENJOY!.');
     
-  for(var y = 0 ; y < iSize; y++){
-    for(var x = 0 ; x < iSize; x++){
+  for(var north = 0 ; north < iSize; north++){
+    for(var east = 0 ; east < iSize; east++){
   
-      var yMC = y;
-      var xMC = x;    
-      var TerrainMCHeight = DTM.LIDAR[y][x]-50;
-      var SurfaceMCHeight = DSM.LIDAR[y][x]-50;
+      var x = east;
+      var z = north;    
+      var TerrainMCHeight = DTM.LIDAR[north][east]-iMinHeight;
+      var SurfaceMCHeight = DSM.LIDAR[north][east]-iMinHeight;
       
-      client.setBlock(xMC, TerrainMCHeight ,yMC, client.blocks['GRASS_BLOCK']);
-      /*if(SurfaceMCHeight > TerrainMCHeight){
-        client.setBlocks(xMC, yMC, TerrainMCHeight+1, xMC, yMC, SurfaceMCHeight, client.blocks['DIAMOND_BLOCK']);
-      }*/
+      //console.log(north, east, x, z, "DTM",DTM.LIDAR[north][east],"DSM", DSM.LIDAR[north][east],"Terrain", TerrainMCHeight,"Surface", SurfaceMCHeight);
+      
+      client.setBlock(x, TerrainMCHeight ,z, client.blocks['GRASS']);
+      if(SurfaceMCHeight > TerrainMCHeight){
+        client.setBlocks(x, TerrainMCHeight+1, z, x, SurfaceMCHeight, z, client.blocks['DIAMOND_BLOCK']);
+      }
     }
   }
 });
