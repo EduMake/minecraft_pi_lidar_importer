@@ -19,7 +19,8 @@
   "author": "Jonathan-Andrew James",
   "license": "GPL-2.0",
   "dependencies": {
-    "minecraft-pi": "^0.2.1",
-    "geodesy": "~1.1.0"
+    "adm-zip": "^0.4.7",
+    "geodesy": "~1.1.0",
+    "minecraft-pi": "^0.2.1"
   }
 }
