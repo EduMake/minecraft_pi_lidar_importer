@@ -11,23 +11,11 @@
 // TODO : pass build.js a grid reference and a size
 // TODO : how to cope with none centred worlds
 
-
-
 var OsGridRef = require('geodesy').OsGridRef;
-OsGridRef.prototype.defraFileName = function(sType, iResolution) {
-	//sk3789_DTM_1m.asc sk3085_DSM_1m.asc
-	var sExt = "asc";
-	if( sType == "json") {
-		sExt = sType;
-	} 
-	return this.toString(4).toLowerCase().replace(/ /g,"")+"_"+sType+"_"+iResolution+"m."+sExt;
-}
-
-//Might need to add functions to the prototype here for :-
-    var fs = require('fs');
+var fs = require('fs');
 
 var LIDAR = function(sGridRef){
-
+	this.version = 2.1;
 	this.sGridRef = sGridRef;
 	this.iResolution = 1;
 	this.dataFolder = "data";
@@ -37,12 +25,41 @@ var LIDAR = function(sGridRef){
 	this.oLoaded = {"DSM":false, "DTM":false};
 };
 
+LIDAR.prototype.defraFileName = function(sType, iResolution) {
+	//sk3789_DTM_1m.asc sk3085_DSM_1m.asc
+	var sExt = "asc";
+	var sDir =  this.dataFolder+"/"; //config from object?
+	if( sType == "json") {
+		sExt = sType;
+		sDir =  this.cacheFolder+"/";
+	} 
+	return sDir+this.oGrid.toString(4).toLowerCase().replace(/ /g,"")+"_"+sType+"_"+iResolution+"m."+sExt;
+}
+
+//Might need to add functions to the prototype here for :-
+
 LIDAR.prototype.load = function(callback){
 	this.onload = callback;
-	this.sJsonFile = this.cacheFolder+"/"+this.oGrid.defraFileName("json",  this.iResolution);
-	var bExists = fs.existsSync(this.sJsonFile)
-	if( bExists && this.bForceGenerate == false) { //add version check
+	var bLoad = true;
+	if(this.bForceGenerate) {
+		bLoad = false;
+	}
+	
+	this.sJsonFile = this.defraFileName("json",  this.iResolution);
+	var bExists = fs.existsSync(this.sJsonFile);
+	if( bLoad && bExists) { 
 		var data = JSON.parse(fs.readFileSync(this.sJsonFile).toString());
+		if(!data.hasOwnProperty("version") || data.version < this.version) {
+			bLoad = false;
+		} 
+	}else{
+		bLoad = false;
+	}
+		
+		
+		
+	if(bLoad) {
+		console.log("Loading");
 		this.DSM = data.DSM;
 		this.DTM = data.DTM;
 		this.iMinHeight = data.iMinHeight;
@@ -50,6 +67,7 @@ LIDAR.prototype.load = function(callback){
 		this.oLoaded = {"DSM":true, "DTM":true};
 		this.onload();
 	} else {
+		console.log("Generating");
 		this.processFile("DSM");
 		this.processFile("DTM");
 	}
@@ -65,7 +83,7 @@ LIDAR.prototype.checkFinished = function(){
 	     return iRowMax;
 	  }).sort();
 
-	this.iMaxHeight = aRowMaxes[aRowMaxes.length-1];
+	this.iMaxHeight = Math.ceil(aRowMaxes[aRowMaxes.length-1]);
 
 	var aRowMines = this.DTM.LIDAR.map(function(aRow, y){
     		aRow.sort();
@@ -73,9 +91,9 @@ LIDAR.prototype.checkFinished = function(){
      		return iRowMin;
   	}).sort();
 
-	this.iMinHeight = aRowMines[0];
+	this.iMinHeight = Math.floor(aRowMines[0]);
 
-	fs.writeFileSync(this.sJsonFile, JSON.stringify(this));
+	fs.writeFileSync(this.sJsonFile, JSON.stringify(this, null, 4));
 	console.log(this.sJsonFile);
 
 	this.onload();
@@ -85,8 +103,8 @@ LIDAR.prototype.checkFinished = function(){
 LIDAR.prototype.processLIDARine = function(sText){
   var aStrings = sText.trim().split(/\s+/);  
   var aNumbers = aStrings.map(function(sNum){
-      //return Math.round(parseFloat(sNum));
-      return Math.floor(parseFloat(sNum));
+      return parseFloat(sNum);
+      //return Math.floor(parseFloat(sNum));
   });
   return aNumbers;
 };
@@ -94,7 +112,7 @@ LIDAR.prototype.processLIDARine = function(sText){
 LIDAR.prototype.processFile = function(sType) {
     var oSurfaceData = {LIDAR:[]};
 
-    var inputFile = this.dataFolder+"/"+this.oGrid.defraFileName(sType, this.iResolution);
+    var inputFile = this.defraFileName(sType, this.iResolution);
 
     var fs = require('fs'),
         readline = require('readline'),
@@ -110,7 +128,7 @@ LIDAR.prototype.processFile = function(sType) {
           oSurfaceData[aMeta[0]] = aMeta[1];
         } else {
           var aCleanLIDAR = oLIDAR.processLIDARine(line);
-          oSurfaceData.LIDAR.push(aCleanLIDAR);
+          oSurfaceData.LIDAR.unshift(aCleanLIDAR);
         }
     });
     
@@ -122,10 +140,10 @@ LIDAR.prototype.processFile = function(sType) {
 };
 
 
-var patch = new LIDAR("SK 35511 86617");
+/*var patch = new LIDAR("SK 35511 86617");
 function doStuff(){
  console.log("doStuff", this);
-
 }
 patch.load(doStuff);
-
+*/
+module.exports = LIDAR
