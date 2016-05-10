@@ -11,8 +11,8 @@ function compareNumbers(a, b){
 }
 
 var LIDAR = function(sGridRef){
-	this.version = 2.2;
-	this.rounded = false;
+	this.version = 2.3;
+	this.rounded = true;
 	this.sGridRef = sGridRef;
 	this.iResolution = 1;
 	this.dataFolder = "data";
@@ -20,6 +20,7 @@ var LIDAR = function(sGridRef){
 	this.cacheFolder = "json";
 	this.roundedFolder = "rounded";
 	this.bForceGenerate = false;
+	//this.bForceGenerate = true;
 	this.oGrid =  OsGridRef.parse(sGridRef);
 	this.oLoaded = {"DSM":false, "DTM":false};
 };
@@ -41,19 +42,16 @@ LIDAR.prototype.getResolutionName = function() {
 
 
 LIDAR.prototype.zipFileName = function(sType) {
-	//LIDAR-DSM-1M-SK38.zip
 	var sDir =  this.zipFolder+"/"; //config from object?
 	return sDir+"LIDAR-"+sType+"-"+this.getResolutionName().toUpperCase()+"-"+this.oGrid.toString(2).replace(/ /g,"")+".zip";
 }
 
 LIDAR.prototype.lidarURL = function(sType) {
-	//LIDAR-DSM-1M-SK38.zip
 	var sDir =  this.zipped_data+"/"; //config from object?
 	return "http://environment.data.gov.uk/ds/survey/index.jsp#/survey?grid="+this.oGrid.toString(2).replace(/ /g,"");
 }
 
 LIDAR.prototype.defraFileName = function(sType, iResolution) {
-	//sk3789_DTM_1m.asc sk3085_DSM_1m.asc
 	var sExt = "asc";
 	
 	if( sType == "json") {
@@ -63,8 +61,6 @@ LIDAR.prototype.defraFileName = function(sType, iResolution) {
 }
 
 LIDAR.prototype.defraFilePath = function(sType, iResolution) {
-	//sk3789_DTM_1m.asc sk3085_DSM_1m.asc
-	
 	var sDir =  this.dataFolder+"/"; //config from object?
 	if( sType == "json") {
 		if(this.rounded) {
@@ -76,9 +72,18 @@ LIDAR.prototype.defraFilePath = function(sType, iResolution) {
 	return sDir+this.defraFileName(sType, iResolution);
 }
 
-//Might need to add functions to the prototype here for :-
-
 LIDAR.prototype.load = function(callback){
+	console.log("Finding LIDAR data for", this.sGridRef);
+	if(!fs.existsSync(this.zipFolder)){
+		fs.mkdirSync(this.zipFolder);
+	}
+	if(!fs.existsSync(this.roundedFolder)){
+		fs.mkdirSync(this.roundedFolder);
+	}
+	if(!fs.existsSync(this.cacheFolder)){
+		fs.mkdirSync(this.cacheFolder);
+	}
+
 	this.onload = callback;
 	var bLoad = true;
 	if(this.bForceGenerate) {
@@ -92,7 +97,7 @@ LIDAR.prototype.load = function(callback){
 		if(!data.hasOwnProperty("version") || data.version < this.version) {
 			bLoad = false;
 		} 
-	}else{
+	} else {
 		bLoad = false;
 	}
 		
@@ -100,6 +105,7 @@ LIDAR.prototype.load = function(callback){
 		
 	if(bLoad) {
 		console.log("Loading");
+
 		this.DSM = data.DSM;
 		this.DTM = data.DTM;
 		this.iMinHeight = data.iMinHeight;
@@ -110,112 +116,80 @@ LIDAR.prototype.load = function(callback){
 		this.oLoaded = {"DSM":true, "DTM":true};
 		this.onload();
 	} else {
-		/*console.log("Generating");
-		this.processFile("DSM");
-		this.processFile("DTM");
-		*/
-		
 		console.log("Generating from Zip");
 		this.processZipFile("DSM");
 		this.processZipFile("DTM");
-		
-		
 	}
 }
 
 LIDAR.prototype.floorAll = function(aData){
-
 	return aData.map(function(aRow, y){
-			return aRow.map(function(fHeight){
-				return Math.floor(fHeight);
-			});
-		  });
+		return aRow.map(function(fHeight){
+			return Math.floor(fHeight);
+		});
+	});
 };
 
 LIDAR.prototype.checkFinished = function(){
-	var oLIDAR = this;
+    var oLIDAR = this;
     if(this.oLoaded.DTM && this.oLoaded.DSM) {
 		if(this.rounded) {
-			var DSM_LIDAR = this.floorAll(this.DSM.LIDAR);
 			var DTM_LIDAR = this.floorAll(this.DTM.LIDAR);
+			var DSM_LIDAR = this.floorAll(this.DSM.LIDAR);
 			var Heights = this.DSM.LIDAR.map(function(aRow, y){
 				return aRow.map(function(fHeight, x){
 					return Math.round(fHeight - oLIDAR.DTM.LIDAR[y][x]);
 				});
-			  });
-			 this.DSM.LIDAR = DSM_LIDAR;
-			 this.DTM.LIDAR = DTM_LIDAR;
-			 this.Heights = Heights;
-			}
-			
-		var DSM = this.DSM.LIDAR.map(function(aRow, y){
-			return aRow.map(function(fHeight){
-				return Math.floor(fHeight);
 			});
-		  });
-		
-		
-		var aRowMaxes = this.DSM.LIDAR.map(function(aRow, y){
-			aRow.sort(compareNumbers);
-			iRowMax = aRow[aRow.length-1];
-			 return iRowMax;
-		  }).sort(compareNumbers);
+			this.DTM.LIDAR = DTM_LIDAR;
+			this.DSM.LIDAR = DSM_LIDAR;
+			this.Heights = Heights;
+		}
 
-		this.iMaxHeight = Math.ceil(aRowMaxes[aRowMaxes.length-1]);
+		this.iMaxHeight = -9999999;
+		this.iHighestX = 0;
+		this.iHighestY = 0;
+		this.iMinHeight = 9999999;
 
-		var aRowMins = this.DTM.LIDAR.map(function(aRow, y){
-				aRow.sort(compareNumbers);
-				iRowMin = aRow[0];
-				return iRowMin;
-		}).sort(compareNumbers);
+		for (var y = 0; y < this.DSM.nrows ; y++ ) {
+			for (var x = 0; x < this.DSM.ncols ; x++ ) {
+				var Height = this.DSM.LIDAR[y][x];
+				var Floor = this.DTM.LIDAR[y][x];
+				
+				if(Height != this.DSM.NODATA_value) {
+					if(Height > this.iMaxHeight) {
+						this.iMaxHeight = Height;
+						this.iHighestY = y;
+						this.iHighestX = x;
+					}
+					if(Floor < this.iMinHeight) {
+						this.iMinHeight = Floor;
+					}
+				}
+			}
+		}
+		//console.log("Highest Y",this.iHighestY*this.DSM.cellsize, "X", this.iHighestX*this.DSM.cellsize, "this.iMaxHeight", this.iMaxHeight);
+		//console.log( "DTM.xllcorner", this.DTM.xllcorner,  "DTM.yllcorner", this.DTM.yllcorner);
+		//console.log( "DSM.xllcorner", this.DSM.xllcorner,  "DSM.yllcorner", this.DSM.yllcorner);
 
-		this.iMinHeight = Math.floor(aRowMins[0]);
+		var iHighestE = parseInt(this.DSM.xllcorner) +  this.iHighestX;
+		var iHighestN = parseInt(this.DSM.yllcorner) +  this.iHighestY;
+		//console.log(iHighestE, iHighestN);
+		var highest = new OsGridRef(iHighestE, iHighestN);
+		console.log("Highest Point", highest.toString(10));				
 
-		//fs.writeFileSync(this.sJsonFile, JSON.stringify(this, null, 4));
 		fs.writeFileSync(this.sJsonFile, JSON.stringify(this, null, 0).replace(/\[/g,"\n["));
 		console.log("Saved to " + this.sJsonFile);
-
 		this.onload();
 	}
 }
 
 LIDAR.prototype.processLIDARine = function(sText){
-  var aStrings = sText.trim().split(/\s+/);  
-  var aNumbers = aStrings.map(function(sNum){
-      return parseFloat(sNum);
-      //return Math.floor(parseFloat(sNum));
-  });
-  return aNumbers;
-};
-
-LIDAR.prototype.processFile = function(sType) {
-    var oSurfaceData = {LIDAR:[]};
-
-    var inputFile = this.defraFilePath(sType, this.iResolution);
-
-    var fs = require('fs'),
-        readline = require('readline'),
-        instream = fs.createReadStream(inputFile),
-        outstream = new (require('stream'))(),
-        rl = readline.createInterface(instream, outstream);
-     
-    var oLIDAR = this;
-
-    rl.on('line', function (line) {
-        if(line.length < 1000) {
-          var aMeta = line.split(/\s+/);
-          oSurfaceData[aMeta[0]] = aMeta[1];
-        } else {
-          var aCleanLIDAR = oLIDAR.processLIDARine(line);
-          oSurfaceData.LIDAR.unshift(aCleanLIDAR);
-        }
-    });
-    
-    rl.on('close', function (line) {
-	oLIDAR[sType] = oSurfaceData;
-	oLIDAR.oLoaded[sType] = true;
-        oLIDAR.checkFinished();//promise??
-    });
+ 	var aStrings = sText.trim().split(/\s+/);  
+ 	var aNumbers = aStrings.map(function(sNum){
+      		return parseFloat(sNum);
+  	});
+	return aNumbers;
 };
 
 LIDAR.prototype.processZipFile = function(sType) {
@@ -223,26 +197,17 @@ LIDAR.prototype.processZipFile = function(sType) {
 	var sZipName = this.zipFileName(sType);
 	
 	if(!fs.existsSync(sZipName)){
-		console.log("LIDAR Data not found at '"+sZipName+"' try downloading from '"+this.lidarURL()+"'");
+		console.log("LIDAR Data not found at '"+sZipName+"' try downloading from  "+this.lidarURL()+" ");
 		process.exit();
 	}
 	
     // reading archives
     var zip = new AdmZip(sZipName);
     var inputFile = this.defraFileName(sType, this.iResolution);
+    console.log("Loading", inputFile, "from", sZipName);
     var sContent = zip.readAsText(inputFile); 
-    
-    console.log(sZipName, inputFile, sContent.length);
-    
-    /*var zipEntries = zip.getEntries();
-    zipEntries.forEach(function(zipEntry) {
-        console.log(zipEntry.toString()); // outputs zip entries information
-        if (zipEntry.entryName == inputFile ) {
-             console.log(zipEntry.data.toString('utf8')); 
-        }
-    });
-    */
-    
+    console.log("Loaded", sContent.length, "characters.  Processing .....");
+        
     var oSurfaceData = {LIDAR:[]};
 
     var oLIDAR = this;
@@ -254,20 +219,14 @@ LIDAR.prototype.processZipFile = function(sType) {
         } else {
           var aCleanLIDAR = oLIDAR.processLIDARine(line);
           oSurfaceData.LIDAR.unshift(aCleanLIDAR);
+          //oSurfaceData.LIDAR.push(aCleanLIDAR);
         }
     });
     
     this[sType] = oSurfaceData;
-	this.oLoaded[sType] = true;
+    this.oLoaded[sType] = true;
+    console.log("Done Loading", inputFile);
     this.checkFinished();
 };
     
-
-
-/*var patch = new LIDAR("SK 35511 86617");
-function doStuff(){
- console.log("doStuff", this);
-}
-patch.load(doStuff);
-*/
 module.exports = LIDAR

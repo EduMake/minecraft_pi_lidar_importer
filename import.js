@@ -2,10 +2,11 @@ var fs = require('fs');
 var LIDAR = require("./lidardata.js");
 var Minecraft = require('minecraft-pi');
 
-var iSize = 254;
-var patch = new LIDAR("SK 35511 86617"); //[UTC Sheffield Grid reference number]
+var iSize = 255;
+//var patch = new LIDAR("SK 35526 86610"); //[UTC Sheffield Grid reference number]
 //var patch = new LIDAR("SK 35500 86500");
 //var patch = new LIDAR("TQ 32088 81232"); //St Pauls
+var patch = new LIDAR("SK 39132 90970"); //St Pauls
 //var patch = new LIDAR("SK 35295 86079");//brammal lane part of 
 //var patch = new LIDAR("SK 35500 86500");
 //var patch = new LIDAR("TQ 32261 79492"); //Westminster
@@ -88,7 +89,7 @@ function doStuff(){
   
   console.log("Done");
   client.chat('Done');
-  client.setPos(0, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) -60, 0);
+  client.setPos(0, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, 0);
   client.end();
  });
 
