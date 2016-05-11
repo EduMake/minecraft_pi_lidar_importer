@@ -4,18 +4,30 @@ var Minecraft = require('minecraft-pi');
 var Blocks = require('minecraft-pi/lib/blocks.json');
 
 var commandLineArgs = require('command-line-args');
- 
-var cli = commandLineArgs([
 
+var sBlocks =  "Blocks Types are "+JSON.stringify(Blocks, null, 0).replace(/,/g,", ").replace("{","").replace("}","").replace(/\"/g,"");
+    	var knowns = [];
+	if(fs.existsSync("knowns.json")) {
+		knowns = JSON.parse(fs.readFileSync("knowns.json"));
+	}
+    	var sKnowns = knowns.map(function(location, id){
+		return id + ":"+location.name;
+	}).join(" ");
+
+
+
+var cli = commandLineArgs([
   //{ name: 'list_blocks', alias: 'l', type: Boolean, defaultValue: false },
-  { name: 'gridref', type: String, alias:'g', defaultOption: true, defaultValue:'SK 35526 86610' },
-  { name: 'build', alias: 'b', type: Boolean, defaultValue: false},
-  { name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: "Blocks Types are "+JSON.stringify(Blocks, null, 0).replace(/,/g,", ").replace("{","").replace("}","")},
+  { name: 'gridref', type: String, alias:'g', defaultOption: true, defaultValue:'SK 35526 86610', description:"Grid Reference to centre on" },
+  { name: 'save', alias: 'n', type: String, defaultValue:"", description:"Save Grid Ref with this name" },
+  { name: 'load', alias: 'l', type: Number, defaultValue: false, description:sKnowns },
+  { name: 'build', alias: 'b', type: Boolean, defaultValue: false, description:"Build this area in Minecraft"},
+  { name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: sBlocks},
   { name: 'surface_block', alias: 's', type: Number, defaultValue: Blocks.IRON_BLOCK},
   { name: 'quarter', alias: 'q', type: Number, defaultValue: 0},
   { name: 'size', alias: 'i', type: Number, defaultValue: 128},
   { name: 'help', alias: 'h', type: Boolean, defaultValue: false },
-  { name: 'list_knownrefs', alias: 'k', type: Boolean, defaultValue: false },
+  //{ name: 'list_knownrefs', alias: 'k', type: Boolean, defaultValue: false },
 
 ]);
 
@@ -30,17 +42,14 @@ if(options.help){
 var iSize = options.size;
 
 if(options.list_knownrefs){
-    var knowns = [
-	"SK 35526 86610  UTC Sheffield",
-	"TQ 32088 81232  St Pauls Cathedral",
-	"SK 35295 86079  Brammal Lane", 
-	"TQ 32261 79492  Westminster",
-	"TQ 31674 80704  Bridges on the Thames",
-	"SK 35393 87144  Peace Gardens",
-	"SK 38530 71173  Church of St Mary Chesterfield",
-	"TQ 30627 79939  London Eye"
-    ];
-    console.log(knowns);
+    	
+    	var knowns = [];
+	if(fs.existsSync("knowns.json")) {
+		knowns = JSON.parse(fs.readFileSync("knowns.json"));
+	}
+    	console.log(knowns.map(function(location, id){
+		return id + " = "+location.name;
+	}).join("\n"));
 	process.exit();
 }
 
@@ -49,12 +58,22 @@ if(options.list_blocks){
 	process.exit();
 }
 
+if(options.save){
+	knowns.push({"ref":options.gridref, "name":options.save});
+	fs.writeFileSync("knowns.json", JSON.stringify(knowns, null, 4));
+}
+
+var sGrid = options.gridref;
+if(options.load !== false) {
+	sGrid = knowns[options.load].ref;
+	console.log("Loading",  knowns[options.load].name);
+}
 
 var patch = new LIDAR(options.gridref);
 patch.rounded = true;
 const MinY = -64;
 const MaxY = 64;
-2
+
 function doStuff(){
  console.log("LIDAR Loaded");
  var oLIDAR = this;
