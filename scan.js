@@ -3,6 +3,47 @@ var LIDAR = require("./lidardata.js");
 var Minecraft = require('minecraft-pi');
 var Blocks = require('minecraft-pi/lib/blocks.json');
 
+var DangerousBlocks= [
+	"SAPLING",
+	"WATER_FLOWING",
+	"LAVA_FLOWING",
+	"LEAVES",
+	"BED",
+	"COBWEB",
+	"GRASS_TALL",
+	"WOOL",
+	"FLOWER_YELLOW",
+	"FLOWER_CYAN",
+	"MUSHROOM_BROWN",
+	"MUSHROOM_RED",
+	"BOOKSHELF",
+	"TORCH",
+	"FIRE",
+	"STAIRS_WOOD",
+	"CHEST",
+	"FARMLAND",
+	"FURNACE_INACTIVE",
+	"FURNACE_ACTIVE",
+	"DOOR_WOOD",
+	"LADDER",
+	"STAIRS_COBBLESTONE",
+	"DOOR_IRON",
+	"SNOW",
+	"ICE",
+	"CACTUS",
+	"CLAY",
+	"SUGAR_CANE",
+	"FENCE",
+	"BEDROCK_INVISIBLE",
+	"GLASS_PANE",
+	"MELON",
+	"FENCE_GATE"
+];
+
+for (var i =0; i<DangerousBlocks.length ; i++) {
+	delete Blocks[DangerousBlocks[i]];
+}
+
 var commandLineArgs = require('command-line-args');
 
 var sBlocks =  "Blocks Types are "+JSON.stringify(Blocks, null, 0).replace(/,/g,", ").replace("{","").replace("}","").replace(/\"/g,"");
@@ -25,10 +66,12 @@ var cli = commandLineArgs([
   { name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: sBlocks},
   { name: 'surface_block', alias: 's', type: Number, defaultValue: Blocks.IRON_BLOCK},
   { name: 'quarter', alias: 'q', type: Number, defaultValue: 0},
+  { name: 'centre', alias: 'c', type: Boolean, defaultValue: false, description:"Builds in centre"},
+  
   { name: 'size', alias: 'i', type: Number, defaultValue: 128},
   { name: 'help', alias: 'h', type: Boolean, defaultValue: false },
   //{ name: 'list_knownrefs', alias: 'k', type: Boolean, defaultValue: false },
-
+  
 ]);
 
 
@@ -74,15 +117,23 @@ patch.rounded = true;
 const MinY = -64;
 const MaxY = 64;
 
+
+var qx = options.quarter % 2;
+var qz = Math.floor(options.quarter / 2);
+var cx = 0-(128/2)+(qx * 128);
+var cz = 0-(128/2)+(qz * 128);
+
+if (options.centre) {
+	var cx = 0;
+	var cz = 0;
+}
+
 function doStuff(){
  console.log("LIDAR Loaded");
  var oLIDAR = this;
   //console.log(oLIDAR);
 
-  var qx = options.quarter % 2;
-  var qz = Math.floor(options.quarter / 2);
-  var cx = 0-(128/2)+(qx * 128);
-  var cz = 0-(128/2)+(qz * 128);
+  
 
   var centrenorth = oLIDAR.oGrid.northing % 1000;
   var centreeast =  oLIDAR.oGrid.easting % 1000;
