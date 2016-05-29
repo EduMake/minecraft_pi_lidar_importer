@@ -27,27 +27,25 @@ var sKnowns = knowns.map(function(location, id){
 	return id + ":"+location.name;
 }).join(" ");
 
-
-
 var cli = commandLineArgs([
-  { name: 'gridref', type: String, alias:'g', defaultOption: true, defaultValue:'SK 35526 86610', description:"Grid Reference to centre on" },
-  { name: 'save', alias: 'n', type: String, defaultValue:"", description:"Save Grid Ref with this name" },
-  { name: 'load', alias: 'l', type: Number, description:sKnowns },
-  { name: 'build', alias: 'b', type: Boolean, defaultValue: false, description:"Build this area in Minecraft"},
-  { name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: sBlocks},
-  { name: 'surface_block', alias: 's', type: Number, defaultValue: Blocks.IRON_BLOCK},
-  { name: 'quarter', alias: 'q', type: Number, defaultValue: 0},
-  { name: 'centre', alias: 'c', type: Boolean, defaultValue: false, description:"Builds in centre"},
-  { name: 'size', alias: 'i', type: Number, defaultValue: 128},
-  { name: 'resolution', alias: 'r', type: Number, defaultValue: 1},
-  { name: 'water', alias: 'w', type: Number, defaultValue: -1},
-  { name: 'debug', alias: 'd', type: Boolean, defaultValue: false },
-  { name: 'help', alias: 'h', type: Boolean, defaultValue: false }
+	{ name: 'gridref', type: String, alias:'g', defaultOption: true, defaultValue:'SK 35526 86610', description:"Grid Reference to centre on" },
+	{ name: 'save', alias: 'n', type: String, defaultValue:"", description:"Save Grid Ref with this name" },
+	{ name: 'load', alias: 'l', type: Number, description:sKnowns },
+	{ name: 'build', alias: 'b', type: Boolean, defaultValue: false, description:"Build this area in Minecraft"},
+	{ name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: sBlocks},
+	{ name: 'surface_block', alias: 's', type: Number, defaultValue: Blocks.IRON_BLOCK},
+	{ name: 'quarter', alias: 'q', type: Number, defaultValue: 0},
+	{ name: 'centre', alias: 'c', type: Boolean, defaultValue: false, description:"Builds in centre"},
+	{ name: 'size', alias: 'i', type: Number, defaultValue: 128},
+	{ name: 'resolution', alias: 'r', type: Number, defaultValue: 1},
+	{ name: 'water', alias: 'w', type: Number, defaultValue: -1},
+	{ name: 'debug', alias: 'd', type: Boolean, defaultValue: false },
+	{ name: 'help', alias: 'h', type: Boolean, defaultValue: false }
 ]);
 
 var options = cli.parse();
 
-if(options.help){
+if(options.help) {
 	console.log(cli.getUsage());	
 	process.exit();
 }
@@ -55,13 +53,13 @@ if(options.help){
 var iSize = options.size;
 var iScale = options.scale;
 
-if(options.list_blocks){
+if(options.list_blocks) {
 	console.log(Blocks);
 	process.exit();
 }
 
 if(options.save){
-	var aFound = knowns.filter(function(place){
+	var aFound = knowns.filter(function(place) {
 		return place.ref == options.gridref;
 	});
 	
@@ -96,110 +94,106 @@ if (options.centre) {
 	var cz = 0;
 }
 
-function doStuff(){
-  console.log("LIDAR Loaded");
-  var oLIDAR = this;
- 
-  var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / options.resolution);
-  var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / options.resolution);
-  
-  var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
-  var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
-  
-  var left =  Math.max(0, centreeast - Math.round(iSize /2));
-  var right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
-  
-  var DTMzone = oLIDAR.DTM.LIDAR.slice(bottom, top).map(function(line){
+function doStuff() {
+	console.log("LIDAR Loaded");
+	var oLIDAR = this;
+
+	var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / options.resolution);
+	var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / options.resolution);
+
+	var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
+	var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
+
+	var left =  Math.max(0, centreeast - Math.round(iSize /2));
+	var right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
+
+	var DTMzone = oLIDAR.DTM.LIDAR.slice(bottom, top).map(function(line){
 		return line.slice(left,right);
 	});
   
-  
-  /*
-  var aDTMmins = DTMzone.map(function(line){
-	return Math.min(...line);
-  });
-  var iMinHeight2 = Math.min(...aDTMmins);
-  console.log("iMinHeight2", iMinHeight2);
-  */
-  var DSMzone = oLIDAR.DSM.LIDAR.slice(bottom, top).map(function(line){
+	/*
+	var aDTMmins = DTMzone.map(function(line){
+		return Math.min(...line);
+	});
+	var iMinHeight2 = Math.min(...aDTMmins);
+	console.log("iMinHeight2", iMinHeight2);
+	*/
+	var DSMzone = oLIDAR.DSM.LIDAR.slice(bottom, top).map(function(line){
 		return line.slice(left,right);
 	});
   
-  if(patch.rounded){	
-   var Heights = oLIDAR.Heights.slice(bottom, top).map(function(line){
-		return line.slice(left,right);
-	});
-  }
+	if(patch.rounded){	
+		var Heights = oLIDAR.Heights.slice(bottom, top).map(function(line){
+			return line.slice(left,right);
+		});
+	}
 
-  if(options.debug) {
-	  console.log(oLIDAR);
-	fs.writeFileSync("Heights.json", JSON.stringify(Heights, null, 0).replace(/\[/g,"\n["));
-	fs.writeFileSync("DSMzone.json", JSON.stringify(DSMzone, null, 0).replace(/\[/g,"\n["));
-	fs.writeFileSync("DTMzone.json", JSON.stringify(DTMzone, null, 0).replace(/\[/g,"\n["));
-}
+	if(options.debug) {
+		console.log(oLIDAR);
+		fs.writeFileSync("Heights.json", JSON.stringify(Heights, null, 0).replace(/\[/g,"\n["));
+		fs.writeFileSync("DSMzone.json", JSON.stringify(DSMzone, null, 0).replace(/\[/g,"\n["));
+		fs.writeFileSync("DTMzone.json", JSON.stringify(DTMzone, null, 0).replace(/\[/g,"\n["));
+	}
 
+	var pad = "   ";
+	var Out = DSMzone.map(function(line){
+		return line.map(function(num){
+			var str = num.toString();
+			return pad.substring(0, pad.length - str.length) + str
+		}).join(" ");
+	}).join("\n");
+	
+	//console.log("Out", Out, "Heights", Heights, "DSMzone",DSMzone, "DTMzone",DTMzone);
+	fs.writeFileSync("data.txt", Out);
+	console.log("DSM Data Saved to data.txt");
 
-var pad = "   ";
- var Out = DSMzone.map(function(line){
-	return line.map(function(num){
-		var str = num.toString();
-		return pad.substring(0, pad.length - str.length) + str
-	}).join(" ");
- }).join("\n");
- //console.log("Out", Out, "Heights", Heights, "DSMzone",DSMzone, "DTMzone",DTMzone);
- fs.writeFileSync("data.txt", Out);
- console.log("DSM Data Saved to data.txt");
+	if(options.build == false){
+		console.log(Out);
+	} else {
+		var client = new Minecraft('localhost', 4711, function() {
+			client.chat('HELLO! IMPORTING LIDAR DATA INTO MINECRAFT PI EDITION. PLEASE ENJOY!.');
 
-if(options.build == false){
- console.log(Out);
+			var half = Math.round(iSize/2);
 
-}else{
+			client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
 
-  var client = new Minecraft('localhost', 4711, function() {
-  client.chat('HELLO! IMPORTING LIDAR DATA INTO MINECRAFT PI EDITION. PLEASE ENJOY!.');
-  
-  var half = Math.round(iSize/2);
-  
-  client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
+			client.chat('Clearing!.');
+			client.setBlocks(cx-half,  MinY,     cz-half,  half,  MinY,   cx+half, client.blocks['COBBLESTONE']);
+			client.setBlocks(cx-half,  MinY +1 , cz-half,  half,  MaxY,   cz+half, client.blocks['AIR']);
+			client.chat('Area Cleared!.');
 
-  client.chat('Clearing!.');
-  client.setBlocks(cx-half,  MinY,     cz-half,  half,  MinY,   cx+half, client.blocks['COBBLESTONE']);
-  client.setBlocks(cx-half,  MinY +1 , cz-half,  half,  MaxY,   cz+half, client.blocks['AIR']);
-  client.chat('Area Cleared!.');
-  
-  console.log("iMinHeight", oLIDAR.iMinHeight, "options.water", options.water );
-  if(options.water > -1) {
-    var WaterMCHeight = Math.round(options.water / options.resolution) + MinY  ;
-	client.setBlocks(cx-half,  MinY , cz-half,  half, WaterMCHeight ,  cz+half, client.blocks['WATER_STATIONARY']);    
-  } 
-   
-    
-  for(var i = 0 ; i < DTMzone.length; i++){ //north direction
-    for(var j = 0 ; j < DTMzone[0].length; j++){ //east direction
-      var x = cx + j - half;
-      var z = cz + i - half;
-      var TerrainMCHeight = Math.round((DTMzone[i][j] - oLIDAR.iMinHeight)  / options.resolution) + MinY  ;
-      var SurfaceMCHeight = TerrainMCHeight + Math.round( Heights[i][j] / options.resolution);
-      
-      client.setBlocks(x, MinY , z, x, TerrainMCHeight , z, options.terrain_block);
-      
-      if(SurfaceMCHeight > TerrainMCHeight){
-               client.setBlocks(x, TerrainMCHeight+1, z, x, SurfaceMCHeight, z, options.surface_block);
-      }
-    }
-    if(i % 10 == 0) {
-      var message = 'i = '+i+ " z= "+ z;
-      console.log(message);
-      client.chat(message);
-    }
-  }
-  
-  console.log("Done");
-  client.chat('Done');
-  client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
-  client.end();
- });
-}
+			console.log("iMinHeight", oLIDAR.iMinHeight, "options.water", options.water );
+			if(options.water > -1) {
+				var WaterMCHeight = Math.round(options.water / options.resolution) + MinY  ;
+				client.setBlocks(cx-half,  MinY , cz-half,  half, WaterMCHeight ,  cz+half, client.blocks['WATER_STATIONARY']);    
+			}
+		
+			for(var i = 0 ; i < DTMzone.length; i++) { //north direction
+				for(var j = 0 ; j < DTMzone[0].length; j++) { //east direction
+					var x = cx + j - half;
+					var z = cz + i - half;
+					var TerrainMCHeight = Math.round((DTMzone[i][j] - oLIDAR.iMinHeight)  / options.resolution) + MinY  ;
+					var SurfaceMCHeight = TerrainMCHeight + Math.round( Heights[i][j] / options.resolution);
+
+					client.setBlocks(x, MinY , z, x, TerrainMCHeight , z, options.terrain_block);
+
+					if(SurfaceMCHeight > TerrainMCHeight) {
+						client.setBlocks(x, TerrainMCHeight+1, z, x, SurfaceMCHeight, z, options.surface_block);
+					}
+				}
+				if(i % 10 == 0) {
+					var message = 'i = '+i+ " z= "+ z;
+					console.log(message);
+					client.chat(message);
+				}
+			}
+	  
+			console.log("Done");
+			client.chat('Done');
+			client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
+			client.end();
+		});
+	}
 }
 
 patch.load(doStuff);

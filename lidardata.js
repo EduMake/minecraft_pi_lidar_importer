@@ -53,7 +53,6 @@ LIDAR.prototype.lidarURL = function(sType) {
 
 LIDAR.prototype.defraFileName = function(sType, iResolution) {
 	var sExt = "asc";
-	
 	if( sType == "json") {
 		sExt = sType;
 	} 
@@ -195,13 +194,12 @@ LIDAR.prototype.checkFinished = function(){
 LIDAR.prototype.processLIDARine = function(sText){
  	var aStrings = sText.trim().split(/\s+/);  
  	var aNumbers = aStrings.map(function(sNum){
-      		return parseFloat(sNum);
+		return parseFloat(sNum);
   	});
 	return aNumbers;
 };
 
-LIDAR.prototype.processZipFile = function(sType) {
-	
+LIDAR.prototype.processZipFile = function(sType) {	
 	var sZipName = this.zipFileName(sType);
 	console.log("Finding "+sZipName);
 	if(!fs.existsSync(sZipName)){
@@ -209,73 +207,73 @@ LIDAR.prototype.processZipFile = function(sType) {
 		process.exit();
 	}
 	
-    // reading archives
-    var zip = new AdmZip(sZipName);
-    
-    var inputFile = this.defraFileName(sType, this.iResolution);
-    console.log("Loading", inputFile, "from", sZipName);
-    
-    var sContent = zip.readAsText(inputFile); 
-    console.log("Loaded", sContent.length, "characters.  Processing .....");
-        
-    var oSurfaceData = {LIDAR:[]};
+	// reading archives
+	var zip = new AdmZip(sZipName);
 
-    var oLIDAR = this;
+	var inputFile = this.defraFileName(sType, this.iResolution);
+	console.log("Loading", inputFile, "from", sZipName);
 
-    sContent.split("\n").map(function (line) {
-        if(line.length < 1000) {
-          var aMeta = line.split(/\s+/);
-          oSurfaceData[aMeta[0]] = aMeta[1];
-        } else {
-          var aCleanLIDAR = oLIDAR.processLIDARine(line);
-          oSurfaceData.LIDAR.unshift(aCleanLIDAR);
-          //oSurfaceData.LIDAR.push(aCleanLIDAR);
-        }
-    });
+	var sContent = zip.readAsText(inputFile); 
+	console.log("Loaded", sContent.length, "characters.  Processing .....");
+
+	var oSurfaceData = {LIDAR:[]};
+
+	var oLIDAR = this;
+
+	sContent.split("\n").map(function (line) {
+		if(line.length < 1000) {
+			var aMeta = line.split(/\s+/);
+			oSurfaceData[aMeta[0]] = aMeta[1];
+		} else {
+			var aCleanLIDAR = oLIDAR.processLIDARine(line);
+			oSurfaceData.LIDAR.unshift(aCleanLIDAR);
+			//oSurfaceData.LIDAR.push(aCleanLIDAR);
+		}
+	});
     
-    this[sType] = oSurfaceData;
-    this.oLoaded[sType] = true;
-    console.log("Done Loading", inputFile);
-    this.checkFinished();
+	this[sType] = oSurfaceData;
+	this.oLoaded[sType] = true;
+	console.log("Done Loading", inputFile);
+	this.checkFinished();
 };
 
 LIDAR.prototype.processFile = function(sType) {
 	var fs = require('fs');
-    var inputFile = this.defraFilePath(sType, this.iResolution);
-    console.log("Finding "+inputFile);
+	var inputFile = this.defraFilePath(sType, this.iResolution);
+	console.log("Finding "+inputFile);
 	var sZipName = this.zipFileName(sType);
-	
+
 	if(!fs.existsSync(inputFile)){
 		console.log("LIDAR Data not found at '"+inputFile+"' try copying out of the "+sZipName+" ");
 		console.log("Try downloading from  "+this.lidarURL()+" ");
 		process.exit();
 	}
+
+	console.log("Loading", inputFile);
+	var oSurfaceData = {LIDAR:[]};
+
+	var readline = require('readline'),
+	instream = fs.createReadStream(inputFile),
+	outstream = new (require('stream'))(),
+	rl = readline.createInterface(instream, outstream);
+
+	var oLIDAR = this;
 	
-    console.log("Loading", inputFile);
-    var oSurfaceData = {LIDAR:[]};
+	rl.on('line', function (line) {
+		if(line.length < 1000) {
+			var aMeta = line.split(/\s+/);
+			oSurfaceData[aMeta[0]] = aMeta[1];
+		} else {
+			var aCleanLIDAR = oLIDAR.processLIDARine(line);
+			oSurfaceData.LIDAR.unshift(aCleanLIDAR);
+		}
+	});
 
-    var readline = require('readline'),
-        instream = fs.createReadStream(inputFile),
-        outstream = new (require('stream'))(),
-        rl = readline.createInterface(instream, outstream);
-     
-    var oLIDAR = this;
-
-    rl.on('line', function (line) {
-        if(line.length < 1000) {
-          var aMeta = line.split(/\s+/);
-          oSurfaceData[aMeta[0]] = aMeta[1];
-        } else {
-          var aCleanLIDAR = oLIDAR.processLIDARine(line);
-          oSurfaceData.LIDAR.unshift(aCleanLIDAR);
-        }
-    });
-    
-    rl.on('close', function (line) {
-	oLIDAR[sType] = oSurfaceData;
-	oLIDAR.oLoaded[sType] = true;
-        oLIDAR.checkFinished();//promise??
-    });
+	rl.on('close', function (line) {
+		oLIDAR[sType] = oSurfaceData;
+		oLIDAR.oLoaded[sType] = true;
+		oLIDAR.checkFinished();//promise??
+	});
 };
     
-module.exports = LIDAR
+module.exports = LIDAR;
