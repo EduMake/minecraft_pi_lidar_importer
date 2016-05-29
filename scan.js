@@ -4,40 +4,10 @@ var Minecraft = require('minecraft-pi');
 var Blocks = require('minecraft-pi/lib/blocks.json');
 
 var DangerousBlocks= [
-	"SAPLING",
-	"WATER_FLOWING",
-	"LAVA_FLOWING",
-	"LEAVES",
-	"BED",
-	"COBWEB",
-	"GRASS_TALL",
-	"WOOL",
-	"FLOWER_YELLOW",
-	"FLOWER_CYAN",
-	"MUSHROOM_BROWN",
-	"MUSHROOM_RED",
-	"BOOKSHELF",
-	"TORCH",
-	"FIRE",
-	"STAIRS_WOOD",
-	"CHEST",
-	"FARMLAND",
-	"FURNACE_INACTIVE",
-	"FURNACE_ACTIVE",
-	"DOOR_WOOD",
-	"LADDER",
-	"STAIRS_COBBLESTONE",
-	"DOOR_IRON",
-	"SNOW",
-	"ICE",
-	"CACTUS",
-	"CLAY",
-	"SUGAR_CANE",
-	"FENCE",
-	"BEDROCK_INVISIBLE",
-	"GLASS_PANE",
-	"MELON",
-	"FENCE_GATE"
+	"SAPLING", "WATER_FLOWING",	"LAVA_FLOWING", "LEAVES", "BED", "COBWEB", "GRASS_TALL", "WOOL",	"FLOWER_YELLOW",
+	"FLOWER_CYAN", "MUSHROOM_BROWN", "MUSHROOM_RED", "BOOKSHELF", "TORCH", "FIRE", "STAIRS_WOOD", "CHEST", "FARMLAND", "FURNACE_INACTIVE",
+	"FURNACE_ACTIVE", "DOOR_WOOD", "LADDER", "STAIRS_COBBLESTONE",
+	"DOOR_IRON", "SNOW",	"ICE", "CACTUS", "CLAY",	"SUGAR_CANE",	"FENCE", "BEDROCK_INVISIBLE", "GLASS_PANE", "MELON", "FENCE_GATE"
 ];
 
 for (var i =0; i<DangerousBlocks.length ; i++) {
@@ -47,33 +17,32 @@ for (var i =0; i<DangerousBlocks.length ; i++) {
 var commandLineArgs = require('command-line-args');
 
 var sBlocks =  "Blocks Types are "+JSON.stringify(Blocks, null, 0).replace(/,/g,", ").replace("{","").replace("}","").replace(/\"/g,"");
-    	var knowns = [];
-	if(fs.existsSync("knowns.json")) {
-		knowns = JSON.parse(fs.readFileSync("knowns.json"));
-	}
-    	var sKnowns = knowns.map(function(location, id){
-		return id + ":"+location.name;
-	}).join(" ");
+
+var knowns = [];
+if(fs.existsSync("knowns.json")) {
+	knowns = JSON.parse(fs.readFileSync("knowns.json"));
+}
+
+var sKnowns = knowns.map(function(location, id){
+	return id + ":"+location.name;
+}).join(" ");
 
 
 
 var cli = commandLineArgs([
-  //{ name: 'list_blocks', alias: 'l', type: Boolean, defaultValue: false },
   { name: 'gridref', type: String, alias:'g', defaultOption: true, defaultValue:'SK 35526 86610', description:"Grid Reference to centre on" },
   { name: 'save', alias: 'n', type: String, defaultValue:"", description:"Save Grid Ref with this name" },
-  { name: 'load', alias: 'l', type: Number, defaultValue: false, description:sKnowns },
+  { name: 'load', alias: 'l', type: Number, description:sKnowns },
   { name: 'build', alias: 'b', type: Boolean, defaultValue: false, description:"Build this area in Minecraft"},
   { name: 'terrain_block', alias: 't', type: Number, defaultValue: Blocks.GRASS, description: sBlocks},
   { name: 'surface_block', alias: 's', type: Number, defaultValue: Blocks.IRON_BLOCK},
   { name: 'quarter', alias: 'q', type: Number, defaultValue: 0},
   { name: 'centre', alias: 'c', type: Boolean, defaultValue: false, description:"Builds in centre"},
-  
   { name: 'size', alias: 'i', type: Number, defaultValue: 128},
-  { name: 'help', alias: 'h', type: Boolean, defaultValue: false },
-  //{ name: 'list_knownrefs', alias: 'k', type: Boolean, defaultValue: false },
-  
+  { name: 'resolution', alias: 'r', type: Number, defaultValue: 1},
+  { name: 'debug', alias: 'd', type: Boolean, defaultValue: false },
+  { name: 'help', alias: 'h', type: Boolean, defaultValue: false }
 ]);
-
 
 var options = cli.parse();
 
@@ -83,18 +52,7 @@ if(options.help){
 }
 
 var iSize = options.size;
-
-if(options.list_knownrefs){
-    	
-    	var knowns = [];
-	if(fs.existsSync("knowns.json")) {
-		knowns = JSON.parse(fs.readFileSync("knowns.json"));
-	}
-    	console.log(knowns.map(function(location, id){
-		return id + " = "+location.name;
-	}).join("\n"));
-	process.exit();
-}
+var iScale = options.scale;
 
 if(options.list_blocks){
 	console.log(Blocks);
@@ -107,16 +65,18 @@ if(options.save){
 }
 
 var sGrid = options.gridref;
-if(options.load !== false) {
+
+if(typeof options.load != "undefined") {
 	sGrid = knowns[options.load].ref;
 	console.log("Loading",  knowns[options.load].name);
 }
 
-var patch = new LIDAR(options.gridref);
+var patch = new LIDAR(sGrid);
 patch.rounded = true;
+patch.iResolution = options.resolution;
+
 const MinY = -64;
 const MaxY = 64;
-
 
 var qx = options.quarter % 2;
 var qz = Math.floor(options.quarter / 2);
@@ -129,14 +89,11 @@ if (options.centre) {
 }
 
 function doStuff(){
- console.log("LIDAR Loaded");
- var oLIDAR = this;
-  //console.log(oLIDAR);
-
-  
-
-  var centrenorth = oLIDAR.oGrid.northing % 1000;
-  var centreeast =  oLIDAR.oGrid.easting % 1000;
+  console.log("LIDAR Loaded");
+  var oLIDAR = this;
+ 
+  var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / options.resolution);
+  var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / options.resolution);
   
   var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
   var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
@@ -158,29 +115,31 @@ function doStuff(){
 	});
   }
 
-  fs.writeFileSync("Heights.json", JSON.stringify(Heights, null, 0).replace(/\[/g,"\n["));
-  fs.writeFileSync("DSMzone.json", JSON.stringify(DSMzone, null, 0).replace(/\[/g,"\n["));
-  fs.writeFileSync("DTMzone.json", JSON.stringify(DTMzone, null, 0).replace(/\[/g,"\n["));
+  if(options.debug) {
+	  console.log(oLIDAR);
+	fs.writeFileSync("Heights.json", JSON.stringify(Heights, null, 0).replace(/\[/g,"\n["));
+	fs.writeFileSync("DSMzone.json", JSON.stringify(DSMzone, null, 0).replace(/\[/g,"\n["));
+	fs.writeFileSync("DTMzone.json", JSON.stringify(DTMzone, null, 0).replace(/\[/g,"\n["));
+}
+
 
 var pad = "   ";
-if(options.build == false){
  var Out = DSMzone.map(function(line){
 	return line.map(function(num){
 		var str = num.toString();
 		return pad.substring(0, pad.length - str.length) + str
 	}).join(" ");
  }).join("\n");
- console.log(Out);
  //console.log("Out", Out, "Heights", Heights, "DSMzone",DSMzone, "DTMzone",DTMzone);
  fs.writeFileSync("data.txt", Out);
  console.log("DSM Data Saved to data.txt");
 
+if(options.build == false){
+ console.log(Out);
+
 }else{
 
   var client = new Minecraft('localhost', 4711, function() {
-  // Use the client variable to play with the server!   
-  
-  // TODO: sort out toomany messages maybe by clearing area first
   client.chat('HELLO! IMPORTING LIDAR DATA INTO MINECRAFT PI EDITION. PLEASE ENJOY!.');
   
   var half = Math.round(iSize/2);
@@ -197,9 +156,9 @@ if(options.build == false){
   for(var i = 0 ; i < DTMzone.length; i++){ //north direction
     for(var j = 0 ; j < DTMzone[0].length; j++){ //east direction
       var x = cx + j - half;
-      var z = cz + i - half;    
-      var TerrainMCHeight = (DTMzone[i][j] - oLIDAR.iMinHeight) + MinY;
-      var SurfaceMCHeight = TerrainMCHeight + Heights[i][j];
+      var z = cz + i - half;
+      var TerrainMCHeight = Math.round((DTMzone[i][j] - oLIDAR.iMinHeight)  / options.resolution) + MinY  ;
+      var SurfaceMCHeight = TerrainMCHeight + Math.round( Heights[i][j] / options.resolution);
       
       client.setBlocks(x, MinY , z, x, TerrainMCHeight , z, options.terrain_block);
       
@@ -211,7 +170,6 @@ if(options.build == false){
       var message = 'i = '+i+ " z= "+ z;
       console.log(message);
       client.chat(message);
-     
     }
   }
   
@@ -222,8 +180,5 @@ if(options.build == false){
  });
 }
 }
+
 patch.load(doStuff);
-
-
-  
-  
