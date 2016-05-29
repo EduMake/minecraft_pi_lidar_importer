@@ -40,6 +40,7 @@ var cli = commandLineArgs([
   { name: 'centre', alias: 'c', type: Boolean, defaultValue: false, description:"Builds in centre"},
   { name: 'size', alias: 'i', type: Number, defaultValue: 128},
   { name: 'resolution', alias: 'r', type: Number, defaultValue: 1},
+  { name: 'water', alias: 'w', type: Number, defaultValue: -1},
   { name: 'debug', alias: 'd', type: Boolean, defaultValue: false },
   { name: 'help', alias: 'h', type: Boolean, defaultValue: false }
 ]);
@@ -60,8 +61,15 @@ if(options.list_blocks){
 }
 
 if(options.save){
-	knowns.push({"ref":options.gridref, "name":options.save});
-	fs.writeFileSync("knowns.json", JSON.stringify(knowns, null, 4));
+	var aFound = knowns.filter(function(place){
+		return place.ref == options.gridref;
+	});
+	
+	if(aFound.length == 0) {
+		var length = knowns.push({"ref":options.gridref, "name":options.save});
+		fs.writeFileSync("knowns.json", JSON.stringify(knowns, null, 4));
+		console.log(options.gridref, options.save, " now saved as ", length-1);
+	}
 }
 
 var sGrid = options.gridref;
@@ -105,10 +113,18 @@ function doStuff(){
 		return line.slice(left,right);
 	});
   
+  
+  /*
+  var aDTMmins = DTMzone.map(function(line){
+	return Math.min(...line);
+  });
+  var iMinHeight2 = Math.min(...aDTMmins);
+  console.log("iMinHeight2", iMinHeight2);
+  */
   var DSMzone = oLIDAR.DSM.LIDAR.slice(bottom, top).map(function(line){
 		return line.slice(left,right);
 	});
-
+  
   if(patch.rounded){	
    var Heights = oLIDAR.Heights.slice(bottom, top).map(function(line){
 		return line.slice(left,right);
@@ -151,7 +167,12 @@ if(options.build == false){
   client.setBlocks(cx-half,  MinY +1 , cz-half,  half,  MaxY,   cz+half, client.blocks['AIR']);
   client.chat('Area Cleared!.');
   
-  console.log("iMinHeight", oLIDAR.iMinHeight );
+  console.log("iMinHeight", oLIDAR.iMinHeight, "options.water", options.water );
+  if(options.water > -1) {
+    var WaterMCHeight = Math.round(options.water / options.resolution) + MinY  ;
+	client.setBlocks(cx-half,  MinY , cz-half,  half, WaterMCHeight ,  cz+half, client.blocks['WATER_STATIONARY']);    
+  } 
+   
     
   for(var i = 0 ; i < DTMzone.length; i++){ //north direction
     for(var j = 0 ; j < DTMzone[0].length; j++){ //east direction
