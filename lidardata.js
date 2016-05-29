@@ -152,39 +152,7 @@ LIDAR.prototype.checkFinished = function(){
 			this.DSM.LIDAR = DSM_LIDAR;
 			this.Heights = Heights;
 		}
-
-		this.iMaxHeight = -9999999;
-		this.iHighestX = 0;
-		this.iHighestY = 0;
-		this.iMinHeight = 9999999;
-
-		for (var y = 0; y < this.DSM.nrows ; y++ ) {
-			for (var x = 0; x < this.DSM.ncols ; x++ ) {
-				var Height = this.DSM.LIDAR[y][x];
-				var Floor = this.DTM.LIDAR[y][x];
-				
-				if(Height != this.DSM.NODATA_value) {
-					if(Height > this.iMaxHeight) {
-						this.iMaxHeight = Height;
-						this.iHighestY = y;
-						this.iHighestX = x;
-					}
-					if(Floor < this.iMinHeight) {
-						this.iMinHeight = Floor;
-					}
-				}
-			}
-		}
-		//console.log("Highest Y",this.iHighestY*this.DSM.cellsize, "X", this.iHighestX*this.DSM.cellsize, "this.iMaxHeight", this.iMaxHeight);
-		//console.log( "DTM.xllcorner", this.DTM.xllcorner,  "DTM.yllcorner", this.DTM.yllcorner);
-		//console.log( "DSM.xllcorner", this.DSM.xllcorner,  "DSM.yllcorner", this.DSM.yllcorner);
-
-		var iHighestE = parseInt(this.DSM.xllcorner) +  this.iHighestX;
-		var iHighestN = parseInt(this.DSM.yllcorner) +  this.iHighestY;
-		//console.log(iHighestE, iHighestN);
-		var highest = new OsGridRef(iHighestE, iHighestN);
-		console.log("Highest Point", highest.toString(10));				
-
+		
 		fs.writeFileSync(this.sJsonFile, JSON.stringify(this, null, 0).replace(/\[/g,"\n["));
 		console.log("Saved to " + this.sJsonFile);
 		this.onload();
@@ -274,6 +242,82 @@ LIDAR.prototype.processFile = function(sType) {
 		oLIDAR.oLoaded[sType] = true;
 		oLIDAR.checkFinished();//promise??
 	});
+};
+
+LIDAR.prototype.getZone = function(iSize){
+	var oLIDAR = this;
+
+	var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / oLIDAR.iResolution);
+	var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / oLIDAR.iResolution);
+
+	var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
+	var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
+
+	var left =  Math.max(0, centreeast - Math.round(iSize /2));
+	var right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
+	var oZone = {};
+
+	oZone.DTM = oLIDAR.DTM.LIDAR.slice(bottom, top).map(function(line){
+		return line.slice(left,right);
+	});
+  
+	oZone.DSM = oLIDAR.DSM.LIDAR.slice(bottom, top).map(function(line){
+		return line.slice(left,right);
+	});
+	
+	
+	oZone.iMaxHeight = -9999999;
+	oZone.iHighestX = 0;
+	oZone.iHighestY = 0;
+	oZone.iMinHeight = 9999999;
+
+	for (var y = 0; y < oZone.DSM.length ; y++ ) {
+		for (var x = 0; x < oZone.DSM[0].length ; x++ ) {
+			var Height = oZone.DSM[y][x];
+			var Floor =  oZone.DTM[y][x];
+			
+			if(Height != oLIDAR.DSM.NODATA_value) {
+				if(Height > oZone.iMaxHeight) {
+					oZone.iMaxHeight = Height;
+					oZone.iHighestY = y;
+					oZone.iHighestX = x;
+				}
+				if(Floor < oZone.iMinHeight) {
+					oZone.iMinHeight = Floor;
+				}
+			}
+		}
+	}
+
+	var iHighestE = parseInt(oLIDAR.DSM.xllcorner) +  oZone.iHighestX;
+	var iHighestN = parseInt(oLIDAR.DSM.yllcorner) +  oZone.iHighestY;
+	var highest = new OsGridRef(iHighestE, iHighestN);
+	console.log("Highest Point", highest.toString(10));				
+
+	if(oLIDAR.rounded){	
+		oZone.Heights = oLIDAR.Heights.slice(bottom, top).map(function(line){
+			return line.slice(left,right);
+		});
+	}
+
+	if(oLIDAR.debug) {
+		//console.log(oLIDAR);
+		fs.writeFileSync("Heights.json", JSON.stringify(oZone.Heights, null, 0).replace(/\[/g,"\n["));
+		fs.writeFileSync("DSMzone.json", JSON.stringify(oZone.DSM, null, 0).replace(/\[/g,"\n["));
+		fs.writeFileSync("DTMzone.json", JSON.stringify(oZone.DTM, null, 0).replace(/\[/g,"\n["));
+	}
+
+	var pad = "   ";
+	var Out = oZone.DSM.map(function(line){
+		return line.map(function(num){
+			var str = num.toString();
+			return pad.substring(0, pad.length - str.length) + str
+		}).join(" ");
+	}).join("\n");
+	
+	fs.writeFileSync("ZoneSurfaceData.txt", Out);
+	console.log("DSM Data Saved to ZoneSurfaceData.txt");
+	return oZone;
 };
     
 module.exports = LIDAR;

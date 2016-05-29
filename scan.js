@@ -80,9 +80,11 @@ if(typeof options.load != "undefined") {
 var patch = new LIDAR(sGrid);
 patch.rounded = true;
 patch.iResolution = options.resolution;
+patch.debug = options.debug;
 
-const MinY = -64;
-const MaxY = 64;
+
+const MinY = -63;
+const MaxY = 63;
 
 var qx = options.quarter % 2;
 var qz = Math.floor(options.quarter / 2);
@@ -96,57 +98,10 @@ if (options.centre) {
 
 function doStuff() {
 	console.log("LIDAR Loaded");
-	var oLIDAR = this;
-
-	var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / options.resolution);
-	var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / options.resolution);
-
-	var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
-	var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
-
-	var left =  Math.max(0, centreeast - Math.round(iSize /2));
-	var right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
-
-	var DTMzone = oLIDAR.DTM.LIDAR.slice(bottom, top).map(function(line){
-		return line.slice(left,right);
-	});
-  
-	/*
-	var aDTMmins = DTMzone.map(function(line){
-		return Math.min(...line);
-	});
-	var iMinHeight2 = Math.min(...aDTMmins);
-	console.log("iMinHeight2", iMinHeight2);
-	*/
-	var DSMzone = oLIDAR.DSM.LIDAR.slice(bottom, top).map(function(line){
-		return line.slice(left,right);
-	});
-  
-	if(patch.rounded){	
-		var Heights = oLIDAR.Heights.slice(bottom, top).map(function(line){
-			return line.slice(left,right);
-		});
-	}
-
-	if(options.debug) {
-		console.log(oLIDAR);
-		fs.writeFileSync("Heights.json", JSON.stringify(Heights, null, 0).replace(/\[/g,"\n["));
-		fs.writeFileSync("DSMzone.json", JSON.stringify(DSMzone, null, 0).replace(/\[/g,"\n["));
-		fs.writeFileSync("DTMzone.json", JSON.stringify(DTMzone, null, 0).replace(/\[/g,"\n["));
-	}
-
-	var pad = "   ";
-	var Out = DSMzone.map(function(line){
-		return line.map(function(num){
-			var str = num.toString();
-			return pad.substring(0, pad.length - str.length) + str
-		}).join(" ");
-	}).join("\n");
 	
-	//console.log("Out", Out, "Heights", Heights, "DSMzone",DSMzone, "DTMzone",DTMzone);
-	fs.writeFileSync("data.txt", Out);
-	console.log("DSM Data Saved to data.txt");
-
+	var oZone = patch.getZone(iSize);
+	//console.log(oZone);
+	
 	if(options.build == false){
 		console.log(Out);
 	} else {
@@ -155,28 +110,31 @@ function doStuff() {
 
 			var half = Math.round(iSize/2);
 
-			client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
+			client.setPos(cx, Math.round(oZone.iMaxHeight - oZone.iMinHeight) + MinY +10, cz);
 
 			client.chat('Clearing!.');
 			client.setBlocks(cx-half,  MinY,     cz-half,  half,  MinY,   cx+half, client.blocks['COBBLESTONE']);
 			client.setBlocks(cx-half,  MinY +1 , cz-half,  half,  MaxY,   cz+half, client.blocks['AIR']);
 			client.chat('Area Cleared!.');
 
-			console.log("iMinHeight", oLIDAR.iMinHeight, "options.water", options.water );
+			var WaterMCHeight = MinY - 1;
 			if(options.water > -1) {
-				var WaterMCHeight = Math.round(options.water / options.resolution) + MinY  ;
+				WaterMCHeight = Math.round(options.water / options.resolution) + MinY;
+				console.log("iMinHeight", oZone.iMinHeight, "options.water", options.water, "WaterMCHeight", WaterMCHeight );
 				client.setBlocks(cx-half,  MinY , cz-half,  half, WaterMCHeight ,  cz+half, client.blocks['WATER_STATIONARY']);    
 			}
 		
-			for(var i = 0 ; i < DTMzone.length; i++) { //north direction
-				for(var j = 0 ; j < DTMzone[0].length; j++) { //east direction
+			for(var i = 0 ; i < oZone.DTM.length; i++) { //north direction
+				for(var j = 0 ; j < oZone.DTM[0].length; j++) { //east direction
 					var x = cx + j - half;
 					var z = cz + i - half;
-					var TerrainMCHeight = Math.round((DTMzone[i][j] - oLIDAR.iMinHeight)  / options.resolution) + MinY  ;
-					var SurfaceMCHeight = TerrainMCHeight + Math.round( Heights[i][j] / options.resolution);
-
-					client.setBlocks(x, MinY , z, x, TerrainMCHeight , z, options.terrain_block);
-
+					var TerrainMCHeight = Math.round((oZone.DTM[i][j] - oZone.iMinHeight)  / options.resolution) + MinY  ;
+					var SurfaceMCHeight = TerrainMCHeight + Math.round( oZone.Heights[i][j] / options.resolution);
+					
+					if(TerrainMCHeight > WaterMCHeight) {
+						client.setBlocks(x, MinY , z, x, TerrainMCHeight , z, options.terrain_block);
+					}
+					
 					if(SurfaceMCHeight > TerrainMCHeight) {
 						client.setBlocks(x, TerrainMCHeight+1, z, x, SurfaceMCHeight, z, options.surface_block);
 					}
@@ -190,7 +148,7 @@ function doStuff() {
 	  
 			console.log("Done");
 			client.chat('Done');
-			client.setPos(cx, Math.round(oLIDAR.iMaxHeight - oLIDAR.iMinHeight) + MinY +10, cz);
+			client.setPos(cx, Math.round(oZone.iMaxHeight - oZone.iMinHeight) + MinY +10, cz);
 			client.end();
 		});
 	}
