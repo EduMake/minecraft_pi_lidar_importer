@@ -22,6 +22,6 @@
     "adm-zip": "^0.4.7",
     "command-line-args": "^2.1.6",
     "geodesy": "~1.1.0",
-    "minecraft-pi-vec3": "0.0.4"
+    "minecraft-pi-vec3": "0.0.5"
   }
 }
