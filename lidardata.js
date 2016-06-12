@@ -13,7 +13,6 @@ function compareNumbers(a, b){
 var LIDAR = function(sGridRef){
 	this.version = 2.3;
 	this.rounded = true;
-	this.sGridRef = sGridRef;
 	this.iResolution = 1;
 	this.dataFolder = "data";
 	this.zipFolder = "zipped_data";
@@ -21,11 +20,17 @@ var LIDAR = function(sGridRef){
 	this.roundedFolder = "rounded";
 	this.bForceGenerate = false;
 	//this.bForceGenerate = true;
+	this.messages = [];	
+	if(typeof sGridRef !== "undefined"){
+		this.setGridRef( sGridRef);
+	}
+};
+
+LIDAR.prototype.setGridRef = function(sGridRef) {
+	this.sGridRef = sGridRef;
 	this.oGrid =  OsGridRef.parse(sGridRef);
 	this.oLoaded = {"DSM":false, "DTM":false};
-	this.messages = [];
-		
-};
+}
 
 LIDAR.prototype.getResolutionName = function() {
 	var sResolution = "1m";
