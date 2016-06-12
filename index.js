@@ -191,7 +191,7 @@ function doStuff() {
 }
 
 function buildthezone() {
-	console.log("LIDAR Loaded");
+	alert("Starting to build");
 	var oZone = patch.getZone(iSize);
 	
 	if(options.build == false){
