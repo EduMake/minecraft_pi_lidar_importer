@@ -33,7 +33,7 @@
 
 <body>
 	<h1>Minecraft Pi LIDAR Importer</h1>
-	<h3>Imports LIDAR data into Minecraft Pi Edition</h3>
+	<!--<h3>Imports LIDAR data into Minecraft Pi Edition</h3>-->
 
 <div>
 	<h2>Location</h2>
@@ -44,23 +44,28 @@
 </div>
 
 
-<div id="webinstructions"></div>
+<div id="downloadmissing"></div>
 
-<br id="break" />
-
-<div>
-	<h2>Build Process</h2>
+<div id="build_control" style="display:none;">
+	<h2>Import the LIDAR data into running Minecraft</h2>
 	<label>Terrain Blocks</label><select id="terrain_blocks"></select>
 	<label>Building Blocks</label><select id="building_blocks"></select>
-	<label>Area in  Minecraft</label><select id="areas"></select>
+	<br />
+	<label>Area in  Minecraft</label><select id="areas">
+		<option value="0">North West</option>
+		<option value="1">North East</option>
+		<option value="2">South West</option>
+		<option value="3">South East</option>
+		<option value="centre">Centre</option>
+	</select>
 	<button id="build" onclick="buildthezone();" >Build</button>
 </div>	
 
 <div>
 	<h2>Flood Fill</h2>
 	<label>Fill With</label><select id="fill_blocks"></select>
-	<label>Fill Vertically</label><select id="vertical"></select>
-	<button id="floodfill" onclick="floodfill();">Build</button>
+	<label>Fill Direction</label><select id="vertical"><option value="false">Flat</option><option value="true">Vertical as Well</option></select>
+	<button id="floodfill" onclick="floodfill();">Fill</button>
 </div>	
 	
 
