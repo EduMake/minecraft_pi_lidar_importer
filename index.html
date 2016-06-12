@@ -1,0 +1,146 @@
+<!--
+   index.html
+   
+   Copyright 2016 Martyn Eggleton <martyn@martyn-Inspiron-1545>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<title>Minecraft Pi LIDAR Importer</title>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<meta name="generator" content="Geany 1.23.1" />
+</head>
+
+<body>
+	<h1>Minecraft Pi LIDAR Importer</h1>
+	<h3>Imports LIDAR data into Minecraft Pi Edition</h3>
+
+<select><option value="red_STONE">RED STONE</option></select>
+
+
+<br />
+
+<br id="break" />
+<!--
+<webview id="foo" src="http://environment.data.gov.uk/ds/survey/index.jsp" style="width:640px; height:500px"></webview>
+-->
+
+<script>
+// Create an empty context menu
+var menu = new nw.Menu();
+
+// Add some items with label
+menu.append(new nw.MenuItem({
+  label: 'Item A',
+  click: function(){
+    alert('You have clicked at "Item A"');
+  }
+}));
+menu.append(new nw.MenuItem({ label: 'Item B' }));
+menu.append(new nw.MenuItem({ type: 'separator' }));
+menu.append(new nw.MenuItem({ label: 'Item C' }));
+
+// Hooks the "contextmenu" event
+document.body.addEventListener('contextmenu', function(ev) {
+  // Prevent showing default context menu
+  ev.preventDefault();
+  // Popup the native context menu at place you click
+  menu.popup(ev.x, ev.y);
+
+  return false;
+}, false);
+
+
+var fs = require('fs');
+var LIDAR = require("./lidardata.js");
+var Minecraft = require('minecraft-pi-vec3');
+var Blocks = require('minecraft-pi-vec3/lib/blocks.json');
+var v = require("minecraft-pi-vec3/lib/vec3_directions.js");
+
+var knowns = [];
+if(fs.existsSync("knowns.json")) {
+	knowns = JSON.parse(fs.readFileSync("knowns.json"));
+}
+
+sGrid = knowns[0].ref;
+console.log("Loading",  knowns[0].name);
+
+
+var patch = new LIDAR(sGrid);
+
+
+patch.rounded = true;
+patch.iResolution = 2;
+patch.debug = false;
+
+patch.onfilemissing = function(inputFile, sZipName, sURL){
+	document.write("LIDAR Data not found at '"+inputFile+"' try copying out of the "+sZipName+" <br />");
+	document.write("Try downloading from  <a target=\"_new\" href=\""+sURL+"\">"+sURL+"</a> <br />");
+}
+
+patch.onzipfilemissing = function( sZipName, sURL ){
+	
+	console.log( sZipName, sURL )
+	// TODO : use webview to open the url and onload run
+	//http://docs.nwjs.io/en/latest/References/webview%20Tag/
+	
+	//document.write("LIDAR Data not found at '"+sZipName+"' trying to download from  <a target=\"_new\" href=\""+sURL+"\">"+sURL+ "</a><br/ >")
+	//document.write('<webview id="foo" src="'+sURL+'" style="width:640px; height:500px"></webview>');
+	
+	var webview = document.createElement("webview");
+	 webview.setAttribute("style", "height:600px;");
+	 
+	 webview.setAttribute("src", sURL);
+	 webview.id = "foo";
+	 var currentDiv = document.getElementById("break"); 
+	
+	//var webview = document.getElementById("foo");
+	console.log("webview",webview);
+	
+	//webview.showDevTools(true);
+	webview.addEventListener("contentload", function(){
+		//sCode = "var el = document.querySelectorAll('[download=\""+sZipName+"\"]');\nif(el.length ==0){return '"+sZipName+" Not Found';\n } var event = new MouseEvent('click', {'view': window,    'bubbles': true,    'cancelable': true});  el[0].dispatchEvent(event);\n return '"+sZipName+"';";
+		sCode = "return '"+sZipName+"';";
+		
+		
+		console.log(sCode);
+		webview.executeScript({ code: sCode }, function(arr){
+				console.log(sZipName, arr);
+			});
+	});
+	document.body.insertBefore(webview, currentDiv); 
+  
+	//document.write("LIDAR Data not found at '"+sZipName+"' try downloading from  <a target=\"_new\" href=\""+sURL+"\">"+sURL+ "</a><br/ >");
+	
+}
+
+	
+patch.load(function(){
+	alert("success");
+	});
+	
+</script> 
+	
+</body>
+
+</html>

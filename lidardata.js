@@ -23,6 +23,8 @@ var LIDAR = function(sGridRef){
 	//this.bForceGenerate = true;
 	this.oGrid =  OsGridRef.parse(sGridRef);
 	this.oLoaded = {"DSM":false, "DTM":false};
+	this.messages = [];
+		
 };
 
 LIDAR.prototype.getResolutionName = function() {
@@ -40,10 +42,23 @@ LIDAR.prototype.getResolutionName = function() {
 	return sResolution;
 }
 
+LIDAR.prototype.onfilemissing = function(inputFile, sZipPath, sURL){
+	console.log("LIDAR Data not found at '"+inputFile+"' try copying out of the "+sZipPath+" ");
+	console.log("Try downloading from  "+sURL+" ");
+}
+
+LIDAR.prototype.onzipfilemissing = function(sZipPath, sURL){
+	console.log("LIDAR Data not found at '"+sZipPath+"' try downloading from "+sURL+ " ");
+}
+
 
 LIDAR.prototype.zipFileName = function(sType) {
+	return "LIDAR-"+sType+"-"+this.getResolutionName().toUpperCase()+"-"+this.oGrid.toString(2).replace(/ /g,"")+".zip";
+}
+
+LIDAR.prototype.zipFilePath = function(sType) {
 	var sDir =  this.zipFolder+"/"; //config from object?
-	return sDir+"LIDAR-"+sType+"-"+this.getResolutionName().toUpperCase()+"-"+this.oGrid.toString(2).replace(/ /g,"")+".zip";
+	return sDir+this.zipFileName(sType);
 }
 
 LIDAR.prototype.lidarURL = function(sType) {
@@ -90,6 +105,8 @@ LIDAR.prototype.load = function(callback){
 	}
 	
 	this.onload = callback;
+	//this.onerror = errcallback;
+	
 	var bLoad = true;
 	if(this.bForceGenerate) {
 		bLoad = false;
@@ -168,18 +185,18 @@ LIDAR.prototype.processLIDARine = function(sText){
 };
 
 LIDAR.prototype.processZipFile = function(sType) {	
-	var sZipName = this.zipFileName(sType);
-	console.log("Finding "+sZipName);
-	if(!fs.existsSync(sZipName)){
-		console.log("LIDAR Data not found at '"+sZipName+"' try downloading from  "+this.lidarURL()+" ");
-		process.exit();
+	var sZipPath = this.zipFilePath(sType);
+	console.log("Finding "+sZipPath);
+	if(!fs.existsSync(sZipPath)){
+		this.onzipfilemissing(this.zipFileName(sType), this.lidarURL());
+		return false;
 	}
 	
 	// reading archives
-	var zip = new AdmZip(sZipName);
+	var zip = new AdmZip(sZipPath);
 
 	var inputFile = this.defraFileName(sType, this.iResolution);
-	console.log("Loading", inputFile, "from", sZipName);
+	console.log("Loading", inputFile, "from", sZipPath);
 
 	var sContent = zip.readAsText(inputFile); 
 	console.log("Loaded", sContent.length, "characters.  Processing .....");
@@ -203,18 +220,18 @@ LIDAR.prototype.processZipFile = function(sType) {
 	this.oLoaded[sType] = true;
 	console.log("Done Loading", inputFile);
 	this.checkFinished();
+	return true;
 };
 
 LIDAR.prototype.processFile = function(sType) {
 	var fs = require('fs');
 	var inputFile = this.defraFilePath(sType, this.iResolution);
 	console.log("Finding "+inputFile);
-	var sZipName = this.zipFileName(sType);
+	var sZipPath = this.zipFilePath(sType);
 
 	if(!fs.existsSync(inputFile)){
-		console.log("LIDAR Data not found at '"+inputFile+"' try copying out of the "+sZipName+" ");
-		console.log("Try downloading from  "+this.lidarURL()+" ");
-		process.exit();
+		this.onfilemissing(inputFile, sZipPath, this.lidarURL());
+		return false;
 	}
 
 	console.log("Loading", inputFile);
