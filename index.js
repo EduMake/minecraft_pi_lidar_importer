@@ -106,8 +106,8 @@ patch.onzipfilemissing = function( sZipName, sURL ){
 	if(webviewtest == null) {
 		var webinstructions = document.getElementById("webinstructions"); 
 		webinstructions.innerHTML = "Please download "+sZipName+" from below into the "+patch.zipFolder+""
-		var win = nw.Window.get();
-		win.maximize();
+		/*var win = nw.Window.get();
+		win.maximize();*/
 		
 		var webview = document.createElement("iframe");
 		webview.setAttribute("style", "width:100%;height:1000px;");
