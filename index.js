@@ -181,6 +181,8 @@ var qx = options.quarter % 2;
 var qz = Math.floor(options.quarter / 2);
 var c = v(0-(128/2)+(qx * 128) , MinY , 0-(128/2)+(qz * 128));
 
+var iSize = options.size;
+
 if (options.centre) {
 	c = v(0, MinY, 0);
 }
@@ -191,7 +193,7 @@ function doStuff() {
 }
 
 function buildthezone() {
-	alert("Starting to build");
+	//alert("Starting to build");
 	var oZone = patch.getZone(iSize);
 	
 	if(options.build == false){
