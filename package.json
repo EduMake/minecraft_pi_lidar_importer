@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Imports LIDAR data into Minecraft Pi Edition",
   "scripts": {
-	"start": "node_modules/.bin/electron main.js",
+    "start": "node_modules/.bin/electron main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,12 +22,12 @@
   "author": "Jonathan-Andrew James",
   "license": "GPL-2.0",
   "dependencies": {
-    "electron-prebuilt": "^1.2.3",
     "adm-zip": "^0.4.7",
+    "bootstrap": "^3.3.6",
     "command-line-args": "^2.1.6",
+    "electron-prebuilt": "^1.2.3",
     "geodesy": "~1.1.0",
     "minecraft-pi-vec3": "0.0.5"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
