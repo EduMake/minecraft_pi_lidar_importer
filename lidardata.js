@@ -332,7 +332,7 @@ LIDAR.prototype.getZone = function(iSize){
 	var pad = "   ";
 	var Out = oZone.DSM.map(function(line){
 		return line.map(function(num){
-			var str = num.toString();
+			var str = num.toString().replace("-9999","---");
 			return pad.substring(0, pad.length - str.length) + str
 		}).join(" ");
 	}).join("\n");
