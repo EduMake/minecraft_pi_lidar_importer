@@ -58,14 +58,19 @@ eLocations.addEventListener("change", function(ev){
 });
 
 // TODO : add name ing of gridref and add to hosts
-
+var elMessage = document.getElementById("msg");
+	
 function loadfile(){
 	var currentDiv = document.getElementById("downloadmissing");
 	currentDiv.innerHTML = "";
 	
 	var eRef = document.getElementById("gridref");
 	patch.setGridRef(eRef.value);
+	
+	elMessage.innerHTML = "Loading....";
+	
 	patch.load(doStuff);
+	
 }
 
 // TODO : Add defaults
@@ -143,9 +148,11 @@ var iSize = 128;
 
 
 function doStuff() {
+	elMessage.innerHTML="";
 	//alert("LIDAR Loaded");
 	var el= document.getElementById("build_control");
 	el.style.display = '';
+	var oZone = patch.getZone(iSize);
 }
 
 function buildthezone() {
@@ -218,6 +225,26 @@ function buildthezone() {
 		});
 	}
 }
+
+function teleport(){
+	var elDir = document.getElementById("direction");
+	var elDist = document.getElementById("distance");
+	
+	var client = new Minecraft('localhost', 4711, function() {
+	
+	function onTile(tile){
+		console.log(elDir.value) 
+		var start = tile[elDir.value.toLowerCase()](parseInt(elDist.value));
+		console.log("getTile", tile, start);
+		client.setPos(start);
+	};
+		
+	client.getTile(onTile);
+	
+});
+	
+}
+
 	
 function floodfill(){
 	var el = document.getElementById("vertical");

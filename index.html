@@ -20,56 +20,82 @@
    
    
 -->
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-
-<head>
-	<title>Minecraft Pi LIDAR Importer</title>
-	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="generator" content="Geany 1.23.1" />
+	<title>Minecraft Pi LIDAR Importer</title>
+	
+	<link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/index.css" rel="stylesheet">
+	
 </head>
 
 <body>
+	
+<div class="container">
 	<h1>Minecraft Pi LIDAR Importer</h1>
 	<!--<h3>Imports LIDAR data into Minecraft Pi Edition</h3>-->
+	<h2 id="msg"></h2>
+	<div>
+		<h2>Location</h2>
+		<label>Location</label><select id="locations"><option value="manual">Manual Entry</option></select></br>
+		
+		<label>Grid Ref</label><input id="gridref" type="string" /><br />
+		<label></label><button onclick="loadfile()">Load</button>
+	</div>
 
-<div>
-	<h2>Location</h2>
-	<label>Location</label><select id="locations"><option value="manual">Manual Entry</option></select>
-	
-	<label>Grid Ref</label><input id="gridref" type="string" />
-	<button onclick="loadfile()">Load</button>
-</div>
 
+	<div id="downloadmissing"></div>
 
-<div id="downloadmissing"></div>
+	<div id="build_control" style="display:none;">
+		<h2>Loaded ... Import the LIDAR data into Minecraft</h2>
+		<label>Terrain Blocks</label><select id="terrain_blocks"></select><br />
+		<label>Building Blocks</label><select id="building_blocks"></select> <br />
+		<label>Area in  Minecraft</label><select id="areas">
+			<option value="0">North West</option>
+			<option value="1">North East</option>
+			<option value="2">South West</option>
+			<option value="3">South East</option>
+			<option value="centre">Centre</option>
+		</select><br />
+		<label></label><button id="build" onclick="buildthezone();" >Build</button>
+	</div>	
 
-<div id="build_control" style="display:none;">
-	<h2>Import the LIDAR data into running Minecraft</h2>
-	<label>Terrain Blocks</label><select id="terrain_blocks"></select>
-	<label>Building Blocks</label><select id="building_blocks"></select>
+	<div>
+		<h2>Flood Fill</h2>
+		<label>Fill With</label><select id="fill_blocks"></select><br />
+		<label>Fill Direction</label>
+		<select id="vertical">
+			<option value="false">Flat</option>
+			<option value="true">Vertical as Well</option>
+		</select><br />
+		<label></label><button id="floodfill" onclick="floodfill();">Fill</button>
+	</div>	
+		
+		
+	<div>
+		<h2>Teleport</h2>
+		<label>Direction </label><select id="direction">
+			<option>Up</option>
+			<option>Down</option>
+			<option>North</option>
+			<option>East</option>
+			<option>South</option>
+			<option>West</option>
+
+		</select>
+		<br />
+		<label>Distance</label><input id="distance" value = "10" />
+		<br />
+		<label></label><button id="teleport"  onclick="teleport();" >Go</button>
+	</div>
+
 	<br />
-	<label>Area in  Minecraft</label><select id="areas">
-		<option value="0">North West</option>
-		<option value="1">North East</option>
-		<option value="2">South West</option>
-		<option value="3">South East</option>
-		<option value="centre">Centre</option>
-	</select>
-	<button id="build" onclick="buildthezone();" >Build</button>
-</div>	
-
-<div>
-	<h2>Flood Fill</h2>
-	<label>Fill With</label><select id="fill_blocks"></select>
-	<label>Fill Direction</label><select id="vertical"><option value="false">Flat</option><option value="true">Vertical as Well</option></select>
-	<button id="floodfill" onclick="floodfill();">Fill</button>
-</div>	
-	
-
-<br />
+</div>
 
 <!--
 <webview id="foo" src="http://environment.data.gov.uk/ds/survey/index.jsp" style="width:640px; height:500px"></webview>
