@@ -108,21 +108,44 @@ patch.debug = false;
 
 patch.onzipfilemissing = function( sZipName, sURL ){
 	console.log( sZipName, sURL )
-	var webviewtest = document.getElementById("foo");
+	var webviewtest = document.getElementById("envagency");
 	if(webviewtest == null) {
-		var webinstructions = document.createElement("h3")
-		webinstructions.innerHTML = "Please download "+sZipName+" from below into the "+patch.zipFolder+""
-		var currentDiv = document.getElementById("downloadmissing");
-		currentDiv.appendChild(webinstructions);
+		// TODO : use webview to open the url and onload run
 		
-		/*var win = nw.Window.get();
-		win.maximize();*/
+		//document.write("LIDAR Data not found at '"+sZipName+"' trying to download from  <a target=\"_new\" href=\""+sURL+"\">"+sURL+ "</a><br/ >")
+		//document.write('<webview id="foo" src="'+sURL+'" style="width:640px; height:500px"></webview>');
 		
-		var webview = document.createElement("iframe");
-		webview.setAttribute("style", "width:100%;height:1000px;");
+		var webview = document.createElement("webview");
+		webview.setAttribute("style", "height:600px;");
+		
 		webview.setAttribute("src", sURL);
-		webview.id = "foo";		
-		currentDiv.appendChild(webview); 	
+		webview.id = "envagency";
+		 
+		console.log("webview", webview);
+		var currentDiv = document.getElementById("downloadmissing");
+		currentDiv.appendChild(webview); 
+		var sCode = "var el = document.querySelectorAll('[download=\""+sZipName+"\"]');\n";
+		sCode += "console.log(el);\n";
+		sCode += "if(el.length >0){\n ";
+		sCode += " var clickTarget = el[0]; ";
+		sCode += " console.log(clickTarget);\n";
+		//sCode += " clickTarget.removeAttribute('href');\n";
+		sCode += " clickTarget.href ='#';\n";
+		sCode += " var event = new MouseEvent('click', {'view': window,    'bubbles': true,    'cancelable': true}); ";
+		sCode += " clickTarget.dispatchEvent(event);";
+		sCode += "}";
+		console.log(sCode);	
+		//webview.addEventListener('dom-ready', function(){
+		webview.addEventListener('did-finish-load', function(){
+			webview.openDevTools();
+			//alert("Click when loaded");
+			setTimeout(function(){
+				webview.executeJavaScript(sCode, false);
+			}, 15000);
+		});
+	
+		  
+		//document.write("LIDAR Data not found at '"+sZipName+"' try downloading from  <a target=\"_new\" href=\""+sURL+"\">"+sURL+ "</a><br/ >");
 	}
 	// TODO : set up a timer to see if it has arrived yet 
 }
