@@ -27,7 +27,8 @@
     "command-line-args": "^2.1.6",
     "electron-prebuilt": "^1.2.3",
     "geodesy": "~1.1.0",
-    "minecraft-pi-vec3": "0.0.5"
+    "minecraft-pi-vec3": "0.0.5",
+    "nominatim": "^0.1.0"
   },
   "devDependencies": {}
 }

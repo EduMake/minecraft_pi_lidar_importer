@@ -42,7 +42,17 @@
 	<h2 id="msg"></h2>
 	<div>
 		<h2>Location</h2>
-		<label>Location</label><select id="locations"><option value="manual">Manual Entry</option></select></br>
+		
+		<label>Location List</label><select id="locations"><option value="manual">Manual Entry</option></select></br>
+		
+		<label>Place Name </label><input id="placename" type="string" /><button onclick="searchplace();">Search</button><br />
+		
+		<div id="searchresults_container">
+		
+			<label>Search results</label><select size="5" id="searchresults"></select></br>
+			<button onclick="useplace();">Use</button><br />
+		</div>
+		
 		
 		<label>Grid Ref</label><input id="gridref" type="string" /><br />
 		<label></label><button onclick="loadfile()">Load</button>
