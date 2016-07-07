@@ -26,11 +26,17 @@ var LIDAR = function(sGridRef){
 	}
 };
 
+LIDAR.prototype.setResolution = function(iResolution) {
+	this.iResolution = iResolution;
+}
+
+
 LIDAR.prototype.setGridRef = function(sGridRef) {
 	this.sGridRef = sGridRef;
 	this.oGrid =  OsGridRef.parse(sGridRef);
 	this.oLoaded = {"DSM":false, "DTM":false};
 }
+
 
 LIDAR.prototype.getResolutionName = function() {
 	var sResolution = "1m";

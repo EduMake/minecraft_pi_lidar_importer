@@ -111,7 +111,9 @@ function loadfile(){
 	elMessage.innerHTML = "Loading....";
 	
 	var eRef = document.getElementById("gridref");
+	var eRes = document.getElementById("res");
 	patch.setGridRef(eRef.value);
+	patch.setResolution(eRes.value);
 	
 	patch.load(doStuff);
 	
