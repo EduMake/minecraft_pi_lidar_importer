@@ -30,7 +30,7 @@ LIDAR.prototype.setGridRef = function(sGridRef) {
 	this.sGridRef = sGridRef;
 	this.oGrid =  OsGridRef.parse(sGridRef);
 	this.oLoaded = {"DSM":false, "DTM":false};
-}
+};
 
 LIDAR.prototype.getResolutionName = function() {
 	var sResolution = "1m";
@@ -45,31 +45,31 @@ LIDAR.prototype.getResolutionName = function() {
 		sResolution = "25cm";
 	}
 	return sResolution;
-}
+};
 
 LIDAR.prototype.onfilemissing = function(inputFile, sZipPath, sURL){
 	console.log("LIDAR Data not found at '"+inputFile+"' try copying out of the "+sZipPath+" ");
 	console.log("Try downloading from  "+sURL+" ");
-}
+};
 
 LIDAR.prototype.onzipfilemissing = function(sZipPath, sURL){
 	console.log("LIDAR Data not found at '"+sZipPath+"' try downloading from "+sURL+ " ");
-}
+};
 
 
 LIDAR.prototype.zipFileName = function(sType) {
 	return "LIDAR-"+sType+"-"+this.getResolutionName().toUpperCase()+"-"+this.oGrid.toString(2).replace(/ /g,"")+".zip";
-}
+};
 
 LIDAR.prototype.zipFilePath = function(sType) {
 	var sDir =  this.zipFolder+"/"; //config from object?
 	return sDir+this.zipFileName(sType);
-}
+};
 
 LIDAR.prototype.lidarURL = function(sType) {
 	var sDir =  this.zipped_data+"/"; //config from object?
 	return "http://environment.data.gov.uk/ds/survey/index.jsp#/survey?grid="+this.oGrid.toString(2).replace(/ /g,"");
-}
+};
 
 LIDAR.prototype.defraFileName = function(sType, iResolution) {
 	var sExt = "asc";
@@ -77,7 +77,7 @@ LIDAR.prototype.defraFileName = function(sType, iResolution) {
 		sExt = sType;
 	} 
 	return this.oGrid.toString(4).toLowerCase().replace(/ /g,"")+"_"+sType+"_"+this.getResolutionName()+"."+sExt;
-}
+};
 
 LIDAR.prototype.defraFilePath = function(sType, iResolution) {
 	console.log(sType, iResolution);
@@ -92,7 +92,7 @@ LIDAR.prototype.defraFilePath = function(sType, iResolution) {
 	var sPath = sDir+this.defraFileName(sType, iResolution);
 	console.log(sPath);
 	return sPath;
-}
+};
 
 LIDAR.prototype.load = function(callback){
 	console.log("Finding LIDAR data for", this.sGridRef);
@@ -119,8 +119,9 @@ LIDAR.prototype.load = function(callback){
 	
 	this.sJsonFile = this.defraFilePath("json",  this.iResolution);
 	var bExists = fs.existsSync(this.sJsonFile);
+	var data = {};
 	if( bLoad && bExists) { 
-		var data = JSON.parse(fs.readFileSync(this.sJsonFile).toString());
+		data = JSON.parse(fs.readFileSync(this.sJsonFile).toString());
 		if(!data.hasOwnProperty("version") || data.version < this.version) {
 			bLoad = false;
 		} 
@@ -149,7 +150,7 @@ LIDAR.prototype.load = function(callback){
 		this.processZipFile("DSM");
 		this.processZipFile("DTM");
 	}
-}
+};
 
 LIDAR.prototype.floorAll = function(aData){
 	return aData.map(function(aRow, y){
@@ -179,7 +180,7 @@ LIDAR.prototype.checkFinished = function(){
 		console.log("Saved to " + this.sJsonFile);
 		this.onload();
 	}
-}
+};
 
 LIDAR.prototype.processLIDARine = function(sText){
  	var aStrings = sText.trim().split(/\s+/);  
@@ -271,12 +272,90 @@ LIDAR.prototype.getZone = function(iSize){
 
 	var centrenorth = Math.round((oLIDAR.oGrid.northing % 1000) / oLIDAR.iResolution);
 	var centreeast =  Math.round((oLIDAR.oGrid.easting % 1000) / oLIDAR.iResolution);
+	
+	var bottom = centrenorth - Math.floor(iSize /2);
+	var top =    centrenorth + Math.ceil(iSize /2);
 
-	var bottom = Math.max(0, centrenorth - Math.round(iSize /2));
-	var top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
+	var left =  centreeast - Math.floor(iSize /2);
+	var right = centreeast + Math.ceil(iSize /2);
+	
+	var iSizeInMetres  = Math.ceil(oLIDAR.iResolution * iSize /2);
+	
+	if(bottom < 0){ //to the south needs more data
+		bottom += 1000;
+		top += 1000;
+		if(left<0){ //southeast
+			left += 1000;
+			right += 1000;
+		} else if (right > 1000) {
+			
+		} else {
+			
+		}
+	}
+		
+	var aCompass = [	
+				{
+					name:"northwest", 
+					n: oLIDAR.oGrid.northing + iSizeInMetres,
+					e: oLIDAR.oGrid.easting - iSizeInMetres,
+					beforeN:false,
+					beforeE:true
+				},
+				{
+					name:"northeast", 
+					n: oLIDAR.oGrid.northing + iSizeInMetres,
+					e: oLIDAR.oGrid.easting + iSizeInMetres,
+					beforeN:false,
+					beforeE:false
+				},
+				{
+					name:"southeast", 
+					n: oLIDAR.oGrid.northing - iSizeInMetres,
+					e: oLIDAR.oGrid.easting + iSizeInMetres,
+					beforeN:true,
+					beforeE:false
+				},
+				{
+					name:"southwest", 
+					n: oLIDAR.oGrid.northing - iSizeInMetres,
+					e: oLIDAR.oGrid.easting - iSizeInMetres,
+					beforeN:true,
+					beforeE:true
+				}
+			]
+	
+	var aOtherKMs = aCompass.filter(function(dir){
+		if ( Math.floor(oLIDAR.oGrid.northing /1000) !== Math.floor(dir.n /1000)) {
+			return true;
+		}
+		if ( Math.floor(oLIDAR.oGrid.easting /1000) !== Math.floor(dir.e /1000)) {
+			return true;
+		}  
+		return false;
+	});
+	
+	
+	console.log("Needs ", aOtherKMs.length, "other Km squares", aOtherKMs);*/
+	/*
+	aOtherLIDAR = aOtherKMs.map(function(dir){
+		var osGR = OsGridRef(dir.e, dir.n);
+		dir.oLIDAR = new LIDAR(osGR.toString());
+		dir.oLIDAR.iResolution = this.iResolution;
+		dir.oLIDAR.load();
+		return dir;
+	});
+	*/
+	
+	
+	//limited to this block
+	bottom = Math.max(0, centrenorth - Math.round(iSize /2));
+	top =    Math.min(oLIDAR.DSM.LIDAR.length, centrenorth + Math.round(iSize /2));
 
-	var left =  Math.max(0, centreeast - Math.round(iSize /2));
-	var right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
+	left =  Math.max(0, centreeast - Math.round(iSize /2));
+	right = Math.min(oLIDAR.DSM.LIDAR[0].length, centreeast + Math.round(iSize /2));
+	
+	
 	var oZone = {};
 
 	oZone.DTM = oLIDAR.DTM.LIDAR.slice(bottom, top).map(function(line){
@@ -333,7 +412,7 @@ LIDAR.prototype.getZone = function(iSize){
 	var Out = oZone.DSM.map(function(line){
 		return line.map(function(num){
 			var str = num.toString().replace("-9999","---");
-			return pad.substring(0, pad.length - str.length) + str
+			return pad.substring(0, pad.length - str.length) + str;
 		}).join(" ");
 	}).join("\n");
 	
