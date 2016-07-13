@@ -16,10 +16,6 @@
         "name": "UTC Sheffield City Centre"
     },
     {
-        "ref": "TQ 32261 79492",
-        "name": "Westminster"
-    },
-    {
         "ref": "TQ 39166 80080",
         "name": "The o2"
     },
@@ -54,6 +50,10 @@
     {
         "ref": "TQ 15355 74283",
         "name": "Twikkers"
+    },
+    {
+        "ref": "TR 37775 52197",
+        "name": "Deal Castle"
     }
 		
 ]
