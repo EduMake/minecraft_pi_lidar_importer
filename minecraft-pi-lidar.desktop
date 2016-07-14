@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Minecraft Pi LIDAR importer
+Comment=Import real building data into mincraft
+Path=/home/pi/projects/minecraft_pi_lidar_importer
+Exec=npm start
+Icon=/usr/share/pixmaps/minecraft-pi.png
+Terminal=false
+Type=Application
+Categories=Application;Game;
+StartupNotify=true

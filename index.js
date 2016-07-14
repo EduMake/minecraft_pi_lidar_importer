@@ -36,7 +36,13 @@ if(fs.existsSync("knowns.json")) {
 	knowns = JSON.parse(fs.readFileSync("knowns.json"));
 }
 
+var searchresults = document.getElementById("searchresults");
+var searchresults_container = document.getElementById("searchresults_container");
+searchresults_container.style.display = 'none';
+
 var eLocations = document.getElementById("locations");
+
+
 knowns.forEach(function(known){
 	var el = document.createElement("option");
 	el.setAttribute("value", known.ref);
@@ -59,15 +65,55 @@ eLocations.addEventListener("change", function(ev){
 
 // TODO : add name ing of gridref and add to hosts
 var elMessage = document.getElementById("msg");
+
+function searchplace(){
+	var placename = document.getElementById("placename").value;
 	
+	var nominatim = require('nominatim');
+	var OsGridRef = require('geodesy').OsGridRef;
+	var LatLon = require('geodesy').LatLonEllipsoidal;
+	
+	nominatim.search({ q: placename+ " England"}, function(err, opts, results) {
+		
+		searchresults.innerHTML ="";
+		
+		results.forEach( function(place){
+			
+			console.log(place);
+			var point = new LatLon(place.lat, place.lon);
+			var placeGridRef = OsGridRef.latLonToOsGrid(point)
+			place.gridref = placeGridRef.toString(10)
+			console.log(place.gridref);
+			var el = document.createElement("option");
+			el.setAttribute("value", place.gridref);
+			el.setAttribute("label", place.display_name);
+			searchresults.appendChild(el);
+		})
+		
+		searchresults_container.style.display = 'block';
+			//get grid refs 
+		//TODO : Make drop down list of results use display_name  of each result object in the result array use gridfer 
+	  
+	});
+	
+}
+
+function useplace(){
+	var eRef = document.getElementById("gridref");
+	eRef.value = searchresults.value;
+	setTimeout(loadfile, 2000);
+}
+
 function loadfile(){
 	var currentDiv = document.getElementById("downloadmissing");
 	currentDiv.innerHTML = "";
 	
-	var eRef = document.getElementById("gridref");
-	patch.setGridRef(eRef.value);
-	
 	elMessage.innerHTML = "Loading....";
+	
+	var eRef = document.getElementById("gridref");
+	var eRes = document.getElementById("res");
+	patch.setGridRef(eRef.value);
+	patch.setResolution(eRes.value);
 	
 	patch.load(doStuff);
 	
@@ -210,7 +256,7 @@ function buildthezone() {
 					var NSurface = Math.round( oZone.Heights[i+1][j] / options.resolution);
 					
 					var Base  = Math.min(Surface, WSurface, ESurface, SSurface, NSurface);
-					console.log("Base", Base, "Surface", Surface, WSurface, ESurface, SSurface, NSurface)
+					//console.log("Base", Base, "Surface", Surface, WSurface, ESurface, SSurface, NSurface)
 					
 					var SurfacePoint = TerrainPoint.up(Surface);
 					var BasePoint = TerrainPoint.up(Base+1);
