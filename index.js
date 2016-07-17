@@ -248,17 +248,28 @@ function buildthezone() {
 				client.setBlocks(SouthWest, NorthEast.up(WaterMCHeight), client.blocks['WATER_STATIONARY']);    
 			}
 		
-			for(var i = 1 ; i < (oZone.DTM.length -1); i++) { //north direction
-				for(var j = 1 ; j < (oZone.DTM[0].length-1); j++) { //east direction
+			var iMax = oZone.DTM.length;
+			for(var i = 0 ; i < iMax; i++) { //north direction
+				var jMax = oZone.DTM[j].length;
+				for(var j = 0 ; j < jMax; j++) { //east direction
 					var FloorPoint = SouthWest.offset(j, 0, i);
 					var TerrainPoint = FloorPoint.up(Math.round((oZone.DTM[i][j] - oZone.iMinHeight)  / options.resolution));
 					
 					
 					var Surface =  Math.round( oZone.Heights[i][j] / options.resolution);
-					var WSurface = Math.round( oZone.Heights[i][j-1] / options.resolution);
-					var ESurface = Math.round( oZone.Heights[i][j+1] / options.resolution);
-					var SSurface = Math.round( oZone.Heights[i-1][j] / options.resolution);
-					var NSurface = Math.round( oZone.Heights[i+1][j] / options.resolution);
+					var WSurface = (j<0)?Surface:Math.round( oZone.Heights[i][j-1] / options.resolution);
+					var ESurface = (j+1>=jMax)?Surface:Math.round( oZone.Heights[i][j+1] / options.resolution);
+					var SSurface = (i<0)?Surface:Math.round( oZone.Heights[i-1][j] / options.resolution);
+					var NSurface = (i+1>=iMax)?Surface:Math.round( oZone.Heights[i+1][j] / options.resolution);
+					
+					/*
+					var Surface =  Math.round( oZone.Heights[i][j] / options.resolution);
+					var WSurface = Math.round( oZone.Heights[i][Math.max(0, j-1)] / options.resolution);
+					var ESurface = Math.round( oZone.Heights[i][Math.min(jMax, j+1)] / options.resolution);
+					var SSurface = Math.round( oZone.Heights[Math.max(0, i-1)][j] / options.resolution);
+					var NSurface = Math.round( oZone.Heights[Math.min(iMax, i+1)][j] / options.resolution);
+					*/
+					
 					
 					var Base  = Math.min(Surface, WSurface, ESurface, SSurface, NSurface);
 					//console.log("Base", Base, "Surface", Surface, WSurface, ESurface, SSurface, NSurface)
