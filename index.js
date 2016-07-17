@@ -115,7 +115,12 @@ function loadfile(){
 	patch.setGridRef(eRef.value);
 	patch.setResolution(eRes.value);
 	
-	patch.load(doStuff);
+	//patch.load(doStuff);
+	patch.loadAll(function(){
+		console.log("onLoad");
+		patch.getZone();
+		doStuff();
+	});
 	
 }
 
@@ -198,7 +203,7 @@ function doStuff() {
 	//alert("LIDAR Loaded");
 	var el= document.getElementById("build_control");
 	el.style.display = '';
-	var oZone = patch.getZone(iSize);
+	//var oZone = patch.getZone(iSize);
 }
 
 function buildthezone() {
